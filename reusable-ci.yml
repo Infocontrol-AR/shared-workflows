@@ -1,0 +1,53 @@
+name: Reusable Build and manage version
+
+on:
+  workflow_call:
+    inputs:
+      DOCKER_REGISTRY:
+        description: 'DOCKER_REGISTRY'
+        required: true
+        type: string
+      DOCKER_REGISTRY_SHORT:
+        description: 'DOCKER_REGISTRY_SHORT'
+        required: true
+        type: string
+      DOCKER_IMAGE_NAME:
+        description: 'DOCKER_IMAGE_NAME'
+        required: true
+        type: string
+
+    secrets:
+      DOCKER_USERNAME:
+        description: 'DOCKER_USERNAME'
+        required: true
+      DOCKER_PASSWORD:
+        description: 'DOCKER_PASSWORD'
+        required: true
+      ARM_SUBSCRIPTION_ID: 
+        description: 'ARM_SUBSCRIPTION_ID'
+        required: true
+      ARM_TENANT_ID: 
+        description: 'ARM_TENANT_ID'
+        required: true
+      ARM_CLIENT_ID: 
+        description: 'ARM_CLIENT_ID'
+        required: true
+      ARM_CLIENT_SECRET: 
+        description: 'ARM_CLIENT_SECRET'
+        required: true
+
+jobs:
+  get-version-number:
+    name: Get version number
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.inputs.outputs.VERSION }}
+    # needs: sonarqube-analysis
+    container:
+      image:  ${{ inputs.DOCKER_REGISTRY}}/achilles-python-runner:latest
+      credentials:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
