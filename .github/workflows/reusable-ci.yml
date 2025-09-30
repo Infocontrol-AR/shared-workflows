@@ -37,6 +37,69 @@ on:
         required: true
 
 jobs:
+  sonarqube-analysis:
+    runs-on: ubuntu-latest
+    container:
+      image:  ${{ inputs.DOCKER_REGISTRY}}/achilles-python-runner:latest
+      credentials:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    - name: Run tests and generate reports
+      run: |
+        pytest tests/test_examples.py --junitxml=test-results.xml
+        coverage run -m pytest tests/test_examples.py --junitxml=test-results.xml
+        coverage xml -o coverage.xml
+        coverage report
+        bandit -r . -f json -o bandit-report.json || true
+    - name: Upload XML files
+      uses: actions/upload-artifact@v4
+      with:
+        name: xml-reports
+        path: "*.xml"
+        retention-days: 30
+        if-no-files-found: warn    
+    - name: Set up SonarQube project
+      run: |
+        # Create project and get token
+        PROJECT_KEY="${{ github.event.repository.name }}"
+        /opt/sonarqube/bin/linux-x86-64/sonar.sh start
+        # Wait a bit more for SonarQube to be fully ready
+        sleep 60
+        # Create project (using default admin credentials)
+        curl -u admin:admin -X POST "http://localhost:9000/api/projects/create?project=${PROJECT_KEY}&name=${PROJECT_KEY}"
+        echo "http://localhost:9000/api/projects/create?project=${PROJECT_KEY}&name=${PROJECT_KEY}"
+
+        # Generate user token for analysis
+        echo  "http://localhost:9000/api/user_tokens/generate?name=github-actions-${GITHUB_RUN_ID}"
+        curl -u admin:admin -X POST "http://localhost:9000/api/user_tokens/generate?name=github-actions" -vvv
+        TOKEN_RESPONSE=$(curl -u admin:admin -X POST "http://localhost:9000/api/user_tokens/generate?name=github-actions-${GITHUB_RUN_ID}")
+        TOKEN=$(echo $TOKEN_RESPONSE | jq -r '.token')
+        echo "SONAR_TOKEN=${TOKEN}"
+        echo "PROJECT_KEY=${PROJECT_KEY}"
+
+        /github/workspace/sonar/bin/sonar-scanner \
+          -Dsonar.projectKey=${PROJECT_KEY} \
+          -Dsonar.sources=. \
+          -Dsonar.host.url=http://localhost:9000 \
+          -Dsonar.login=${TOKEN} \
+          -Dsonar.python.coverage.reportPaths=coverage.xml \
+          -Dsonar.python.xunit.reportPath=test-results.xml \
+          -Dsonar.python.bandit.reportPaths=bandit-report.json \
+          -Dsonar.exclusions=tests/**,venv/**,env/**,**/__pycache__/**
+        sleep 30
+        QUALITY_GATE=$(curl -u ${TOKEN}: "http://localhost:9000/api/qualitygates/project_status?projectKey=${PROJECT_KEY}" | jq -r '.projectStatus.status')
+       
+        echo "Quality Gate Status: $QUALITY_GATE"       
+        if [ "$QUALITY_GATE" != "OK" ]; then
+          echo "Quality Gate failed!"
+          exit 1
+        fi   
   get-version-number:
     name: Get version number
     runs-on: ubuntu-latest
