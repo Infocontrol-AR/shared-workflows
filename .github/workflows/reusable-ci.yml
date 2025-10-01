@@ -15,6 +15,10 @@ on:
         description: 'DOCKER_IMAGE_NAME'
         required: true
         type: string
+      VERSION_FILE_NAME:
+        description: 'File name with the version of the application'
+        required: true
+        type: string
 
     secrets:
       DOCKER_USERNAME:
@@ -54,7 +58,7 @@ jobs:
     - name: Calculate version number
       id: inputs   
       run: |
-          export VERSION=$(python3 /devops-tools/versionmanager.py get ./app/_version.py)
+          export VERSION=$(python3 /devops-tools/versionmanager.py get ${{ inputs.VERSION_FILE_NAME}})
           echo "VERSION=$VERSION"
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
   build:
