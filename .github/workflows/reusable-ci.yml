@@ -89,7 +89,7 @@ jobs:
       credentials:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}    
-    needs: [build]
+    needs: [build, get-version-number]
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
