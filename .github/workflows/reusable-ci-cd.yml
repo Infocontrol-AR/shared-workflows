@@ -3,6 +3,14 @@ name: Reusable Build and manage version
 on:
   workflow_call:
 
+    secrets:
+      DOCKER_USERNAME:
+        description: 'DOCKER_USERNAME'
+        required: true
+      DOCKER_PASSWORD:
+        description: 'DOCKER_PASSWORD'
+        required: true
+
 jobs:
   build:
     runs-on: [self-hosted]
