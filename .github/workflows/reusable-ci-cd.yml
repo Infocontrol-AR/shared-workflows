@@ -2,7 +2,27 @@ name: Reusable Build and manage version
 
 on:
   workflow_call:
-
+    inputs:
+      DOCKER_REGISTRY:
+        description: 'DOCKER_REGISTRY'
+        required: true
+        type: string
+      DOCKER_REGISTRY_SHORT:
+        description: 'DOCKER_REGISTRY_SHORT'
+        required: true
+        type: string
+      DOCKER_IMAGE_NAME:
+        description: 'DOCKER_IMAGE_NAME'
+        required: true
+        type: string
+      VERSION_FILE_NAME:
+        description: 'File name with the version of the application'
+        required: true
+        type: string
+      REPOSITORY_NAME:
+        description: 'Name of the repository which is being built'
+        required: true
+        type: string
     secrets:
       DOCKER_USERNAME:
         description: 'DOCKER_USERNAME'
