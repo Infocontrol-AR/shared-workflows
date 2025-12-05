@@ -74,3 +74,13 @@ jobs:
           name: trivy-json-report
           path: trivy-report.json
 
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      - name: Run tests and generate reports
+        run: |
+          pytest tests/test_examples.py --junitxml=test-results.xml
+          coverage run -m pytest tests/test_examples.py --junitxml=test-results.xml
+          coverage xml -o coverage.xml
+          coverage report
+          bandit -r . -f json -o bandit-report.json || true
