@@ -15,11 +15,15 @@ on:
         description: 'DOCKER_IMAGE_NAME'
         required: true
         type: string
-      DOCKER_TAG:
-        description: 'DOCKER_TAG with which to tag the image'
-        required: true
-        type: string
-
+      # DOCKER_TAG:
+      #  description: 'DOCKER_TAG with which to tag the image'
+      #  required: true
+      #  type: string
+      DEPLOY:
+        description: 'Whether to deploy after build'
+        required: false
+        type: boolean
+        default: false  
       VERSION_FILE_NAME:
         description: 'File name with the version of the application'
         required: true
@@ -69,9 +73,8 @@ jobs:
 
   build:
     runs-on: [self-hosted]
-    # Dynamically set environment based on branch
+    needs: pre-build
     environment: ${{ github.ref_name == 'develop' && 'development' || github.ref_name == 'staging' && 'staging' || github.ref_name == 'qa' && 'qa'}}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -92,12 +95,12 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ inputs.DOCKER_TAG }} # latest-${{ github.run_id }}
+          tags: ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }} # latest-${{ github.run_id }}
       - name: Run Trivy scan on private image
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'image'
-          image-ref: '${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ inputs.DOCKER_TAG }}' # latest-${{ github.run_id }}'
+          image-ref: '${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }}' # latest-${{ github.run_id }}'
           format: 'json'
           output: 'trivy-report.json'
           exit-code: '0'
@@ -160,4 +163,68 @@ jobs:
             echo "Quality Gate failed!"
             echo "Ignoring errors for now, change next line to 'exit 1' to enforce quality gate."
             exit 0
-          fi            
+          fi
+  deploy:
+    needs: [build, pre-build]
+    runs-on: [self-hosted]
+    # Dynamically set environment based on branch
+    environment: ${{ github.ref_name == 'develop' && 'development' || github.ref_name == 'staging' && 'staging' || github.ref_name == 'qa' && 'qa' }}
+    if: ${{ inputs.DEPLOY }} == 'true'
+    steps:
+      - run: | 
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
+            echo "Running on remote machine..."
+            echo "Releasing ${{ needs.pre-build.outputs.version }}"
+            echo "Environment is frozen: ${{ vars.ENVIRONMENT_FROZEN }}"
+            docker system prune -af
+            cd workspace
+
+            if [ ! -d "${{ github.event.repository.name }}" ]; then
+                echo "Folder does not exist, clonning code..."
+                git clone git@github.com:${{ github.repository }}.git
+                cd ${{ github.event.repository.name }}
+                git checkout ${{ github.ref_name }}
+            else
+                echo "Folder already exists. Initializing Git inside existing folder..."
+
+                REPO_URL="git@github.com:AI-ACHILLES/ai-middleware-v3.git"
+                echo "Repo URL: $REPO_URL"
+
+                cd ${{ github.event.repository.name }} || { echo "Cannot cd into FOLDER"; exit 1; }
+                git config --global init.defaultBranch main
+                git init
+                
+                git remote add origin "$REPO_URL"
+                
+                git pull
+                git checkout -b "${{ github.ref_name }}" origin/"${{ github.ref_name }}"
+            fi
+            mv .env.example .env
+            sed -i "s|QDRANT_URL=.*|QDRANT_URL=${{ secrets.QDRANT_URL }}|g" .env
+            sed -i "s|QDRANT_API_KEY=.*|QDRANT_API_KEY=${{ secrets.QDRANT_API_KEY }}|g" .env
+            sed -i "s|EMBEDDING_MODEL=.*|EMBEDDING_MODEL=${{ secrets.EMBEDDING_MODEL }}|g" .env
+ 
+            sed -i "s|AZURE_STORAGE_SAS_TOKEN=.*|AZURE_STORAGE_SAS_TOKEN=${{ secrets.AZURE_STORAGE_SAS_TOKEN }}|g" .env
+            sed -i "s|AZURE_STORAGE_ACCOUNT_NAME=.*|AZURE_STORAGE_ACCOUNT_NAME=${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}|g" .env
+            sed -i "s|AZURE_STORAGE_CONTAINER_NAME=.*|AZURE_STORAGE_CONTAINER_NAME=${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}|g" .env
+ 
+            sed -i "s|UNSTRUCTURED_API_URL=.*|UNSTRUCTURED_API_URL=${{ secrets.UNSTRUCTURED_API_URL }}|g" .env
+            sed -i "s|UNSTRUCTURED_API_KEY=.*|UNSTRUCTURED_API_KEY=${{ secrets.UNSTRUCTURED_API_KEY }}|g" .env
+ 
+            sed -i "s|LLAMAPARSE_API_KEY=.*|LLAMAPARSE_API_KEY=${{ secrets.LLAMAPARSE_API_KEY }}|g" .env
+ 
+            sed -i "s|FIREWORKS_API_KEY=.*|FIREWORKS_API_KEY=${{ secrets.FIREWORKS_API_KEY }}|g" .env
+            sed -i "s|FIREWORKS_MODEL=.*|FIREWORKS_MODEL=${{ secrets.FIREWORKS_MODEL }}|g" .env
+
+            sed -i "s|FW_API_KEY=.*|FW_API_KEY=${{ secrets.FW_API_KEY }}|g" .env
+            sed -i "s|FW_ENDPOINT=.*|FW_ENDPOINT=${{ secrets.FW_ENDPOINT }}|g" .env
+            sed -i "s|FW_MODEL=.*|FW_MODEL=${{ secrets.FW_MODEL }}|g" .env
+            sed -i "s|DEBUG=.*|DEBUG=${{ vars.DEBUG }}|g" .env
+
+            cat .env
+            chmod +x ./*.sh
+            docker compose down --rmi all --volumes --remove-orphans
+            docker compose up --build -d
+            exit 0
+          EOF
+      - run: echo "Deployment completed successfully!"
