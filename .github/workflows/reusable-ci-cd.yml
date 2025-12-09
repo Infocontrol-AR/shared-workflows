@@ -15,6 +15,11 @@ on:
         description: 'DOCKER_IMAGE_NAME'
         required: true
         type: string
+      DOCKER_TAG:
+        description: 'DOCKER_TAG with which to tag the image'
+        required: true
+        type: string
+
       VERSION_FILE_NAME:
         description: 'File name with the version of the application'
         required: true
@@ -57,12 +62,12 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:latest-${{ github.run_id }}
+          tags: ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ inputs.DOCKER_TAG }} # latest-${{ github.run_id }}
       - name: Run Trivy scan on private image
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'image'
-          image-ref: '${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:latest-${{ github.run_id }}'
+          image-ref: '${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ inputs.DOCKER_TAG }}' # latest-${{ github.run_id }}'
           format: 'json'
           output: 'trivy-report.json'
           exit-code: '0'
