@@ -37,6 +37,36 @@ on:
         required: true
 
 jobs:
+
+  pre-build:
+    runs-on: [self-hosted]
+    outputs:
+      version: ${{ steps.compute_version.outputs.version }}
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@v4
+      - id: compute_version
+        shell: bash
+        run: |
+          ref="${GITHUB_REF_NAME}"
+          if [ "$ref" = "develop" ]; then
+            echo "version=latest-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+          elif [ "$ref" = "qa" ] || [ "$ref" = "staging" ]; then
+            python3 /devops-tools/versionmanager.py increase ${{ vars.VERSION_FILE_NAME}}          
+            export version=$(python3 /devops-tools/versionmanager.py get ${{ vars.VERSION_FILE_NAME}})
+            git config --global user.email "devops@achilles.com"
+            git config --global user.name "Achilles DevOps Bot"
+            git tag -a $version -m "Tag $version created automatically"
+            git add .
+            git commit -m "NOTICKET: Increasing version number"
+            cat ${{ vars.VERSION_FILE_NAME}}
+            git push --tags
+            git push origin $ref
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=unknown" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
     runs-on: [self-hosted]
     # Dynamically set environment based on branch
