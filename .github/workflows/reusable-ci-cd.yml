@@ -19,7 +19,7 @@ on:
       #  description: 'DOCKER_TAG with which to tag the image'
       #  required: true
       #  type: string
-      DEPLOY:
+      FROZEN_ENVIRONMENT:
         description: 'Whether to deploy after build'
         required: false
         type: boolean
@@ -65,6 +65,7 @@ jobs:
           elif [ "$ref" = "qa" ] || [ "$ref" = "staging" ]; then
             python3 /devops-tools/versionmanager.py increase ${{ vars.VERSION_FILE_NAME}}          
             export version=$(python3 /devops-tools/versionmanager.py get ${{ vars.VERSION_FILE_NAME}})
+            export version="$(echo "$version" | tr -d '\r' | xargs)"
             git config --global user.email "devops@achilles.com"
             git config --global user.name "Achilles DevOps Bot"
             git tag -a $version -m "Tag $version created automatically"
@@ -176,10 +177,16 @@ jobs:
     runs-on: [self-hosted]
     # Dynamically set environment based on branch
     environment: ${{ github.ref_name == 'develop' && 'development' || github.ref_name == 'staging' && 'staging' || github.ref_name == 'qa' && 'qa' }}
-    if: ${{ inputs.DEPLOY }} == 'true'
+    if: ${{ inputs.FROZEN_ENVIRONMENT != 'true'}} 
     steps:
       - run: | 
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
+
+            if [[ "${{ inputs.FROZEN_ENVIRONMENT }}" != "true" ]]; then
+                echo "Environment is frozen. Skipping deployment."
+                exit 0  # or exit 1 if you want the job to fail
+            fi
+
             echo "Running on remote machine..."
             echo "Releasing ${{ needs.pre-build.outputs.version }}"
             echo "Environment is frozen: ${{ vars.ENVIRONMENT_FROZEN }}"
