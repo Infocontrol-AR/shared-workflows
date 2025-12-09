@@ -32,6 +32,14 @@ on:
         description: 'Name of the repository which is being built'
         required: true
         type: string
+      SSH_PASSWORD:
+        description: 'SSH_PASSWORD for deployment server'
+        required: true
+        type: string
+      SSH_IP:
+        description: 'SSH_IP for deployment server'
+        required: true 
+        type: string  
     secrets:
       DOCKER_USERNAME:
         description: 'DOCKER_USERNAME'
