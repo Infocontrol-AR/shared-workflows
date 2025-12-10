@@ -245,6 +245,7 @@ jobs:
             echo "Releasing ${{ needs.pre-build.outputs.version }}"
             echo "Environment is frozen: ${{ vars.ENVIRONMENT_FROZEN }}"
             docker system prune -af
+            
             docker login ${{ inputs.DOCKER_REGISTRY }} -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
             cd workspace
 
@@ -295,7 +296,13 @@ jobs:
             sed -i "s|VERSION=.*|VERSION=${{ needs.pre-build.outputs.version }}|g" .env
 
             cat .env
-            chmod +x ./*.sh
+            export $(cat .env | xargs)
+            
+            if ! docker network inspect "${NETWORK_NAME}" >/dev/null 2>&1; then
+              docker network create --driver bridge "${NETWORK_NAME}"
+            fi
+
+            # chmod +x ./*.sh
             docker compose down --rmi all --volumes --remove-orphans
             docker compose up --build -d
             exit 0
