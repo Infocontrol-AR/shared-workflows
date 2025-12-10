@@ -59,6 +59,9 @@ on:
       AZURE_STORAGE_CONTAINER_NAME:
         description: 'AZURE_STORAGE_CONTAINER_NAME'
         required: true
+      AZURE_STORAGE_SAS_TOKEN:
+        description: 'AZURE_STORAGE_SAS_TOKEN'
+        required: true
       EMBEDDING_MODEL:
         description: 'EMBEDDING_MODEL'
         required: true
