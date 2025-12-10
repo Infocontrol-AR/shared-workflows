@@ -185,19 +185,11 @@ jobs:
     if: ${{ vars.ENVIRONMENT_FROZEN != 'true'}} 
     steps:
       - run: | 
-          # echo "Checking if ${{ inputs.environment }} is frozen..."
-          # if [ "${{ vars.ENVIRONMENT_FROZEN }}" = "true" ]; then
-          #  echo "❄️ Environment is FROZEN - skipping deployment"
-          #  echo "should-deploy=false" >> $GITHUB_OUTPUT
-          #else
-          #  echo "✅ Environment is active - proceeding with deployment"
-          #  echo "should-deploy=true" >> $GITHUB_OUTPUT
-          # fi      
+          if [[ "${{ vars.ENVIRONMENT_FROZEN }}" == "true" ]]; then
+            echo "Environment is frozen. Skipping deployment."
+            exit 0
+          fi
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
-
-            if [[ "${{ inputs.FROZEN_ENVIRONMENT }}" != "true" ]]; then
-                echo "Environment is frozen. Skipping deployment."
-            fi
 
             echo "Running on remote machine..."
             echo "Releasing ${{ needs.pre-build.outputs.version }}"
