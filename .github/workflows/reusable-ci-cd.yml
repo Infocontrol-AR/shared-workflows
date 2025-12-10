@@ -144,7 +144,7 @@ jobs:
       - name: Log in to custom Docker registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ inputs.DOCKER_REGISTRY }} #azspshacr01-d4asfndmh8h2epbp.azurecr.io
+          registry: ${{ inputs.DOCKER_REGISTRY }} 
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
@@ -245,6 +245,7 @@ jobs:
             echo "Releasing ${{ needs.pre-build.outputs.version }}"
             echo "Environment is frozen: ${{ vars.ENVIRONMENT_FROZEN }}"
             docker system prune -af
+            docker login ${{ inputs.DOCKER_REGISTRY }} -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
             cd workspace
 
             if [ ! -d "${{ github.event.repository.name }}" ]; then
