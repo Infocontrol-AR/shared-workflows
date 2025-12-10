@@ -32,6 +32,10 @@ on:
         description: 'Name of the repository which is being built'
         required: true
         type: string
+      environment: 
+        description: 'Deployment environment'
+        required: true
+        type: string
     secrets:
 
       SSH_PASSWORD:
@@ -51,6 +55,7 @@ jobs:
 
   pre-build:
     runs-on: [self-hosted]
+    environment: ${{ inputs.environment }}
     outputs:
       version: ${{ steps.compute_version.outputs.version }}
     permissions: write-all
@@ -81,8 +86,9 @@ jobs:
 
   build:
     runs-on: [self-hosted]
+    environment: ${{ inputs.environment }}
     needs: pre-build
-    environment: ${{ github.ref_name == 'develop' && 'development' || github.ref_name == 'staging' && 'staging' || github.ref_name == 'qa' && 'qa'}}
+    # environment: ${{ github.ref_name == 'develop' && 'development' || github.ref_name == 'staging' && 'staging' || github.ref_name == 'qa' && 'qa'}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -175,8 +181,8 @@ jobs:
   deploy:
     needs: [build, pre-build]
     runs-on: [self-hosted]
-    # Dynamically set environment based on branch
-    environment: ${{ github.ref_name == 'develop' && 'development' || github.ref_name == 'staging' && 'staging' || github.ref_name == 'qa' && 'qa' }}
+    environment: ${{ inputs.environment }}
+    # environment: ${{ github.ref_name == 'develop' && 'development' || github.ref_name == 'staging' && 'staging' || github.ref_name == 'qa' && 'qa' }}
     if: ${{ inputs.FROZEN_ENVIRONMENT != 'true'}} 
     steps:
       - run: | 
