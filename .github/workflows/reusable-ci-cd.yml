@@ -64,16 +64,6 @@ jobs:
       - id: compute_version
         shell: bash
         run: |
-
-          echo "Checking if ${{ inputs.environment }} is frozen..."
-          if [ "${{ vars.ENVIRONMENT_FROZEN }}" = "true" ]; then
-            echo "❄️ Environment is FROZEN - skipping deployment"
-            echo "should-deploy=false" >> $GITHUB_OUTPUT
-          else
-            echo "✅ Environment is active - proceeding with deployment"
-            echo "should-deploy=true" >> $GITHUB_OUTPUT
-          fi
-                  
           ref="${GITHUB_REF_NAME}"
           if [ "$ref" = "develop" ]; then
             echo "version=latest-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
@@ -192,10 +182,17 @@ jobs:
     needs: [build, pre-build]
     runs-on: [self-hosted]
     environment: ${{ inputs.environment }}
-    # environment: ${{ github.ref_name == 'develop' && 'development' || github.ref_name == 'staging' && 'staging' || github.ref_name == 'qa' && 'qa' }}
-    if: ${{ inputs.FROZEN_ENVIRONMENT != 'true'}} 
+    if: ${{ vars.ENVIRONMENT_FROZEN != 'true'}} 
     steps:
       - run: | 
+          # echo "Checking if ${{ inputs.environment }} is frozen..."
+          # if [ "${{ vars.ENVIRONMENT_FROZEN }}" = "true" ]; then
+          #  echo "❄️ Environment is FROZEN - skipping deployment"
+          #  echo "should-deploy=false" >> $GITHUB_OUTPUT
+          #else
+          #  echo "✅ Environment is active - proceeding with deployment"
+          #  echo "should-deploy=true" >> $GITHUB_OUTPUT
+          # fi      
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
 
             if [[ "${{ inputs.FROZEN_ENVIRONMENT }}" != "true" ]]; then
