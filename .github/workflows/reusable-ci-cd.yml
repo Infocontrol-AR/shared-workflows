@@ -308,6 +308,19 @@ jobs:
             docker volume create huggingface-cache 2>/dev/null || echo "Volume huggingface-cache already exists"
             docker volume create middleware-consumer 2>/dev/null || echo "Volume middleware-consumer already exists"
 
+            docker stop ${MIDDLEWARE_CONTAINER_NAME}
+            # docker stop ${RAG_CONTAINER_NAME}
+            # docker stop ${VECTORIZER_CONTAINER_NAME}
+            docker stop embedding-service-ollama
+            docker stop embedding-service-baai
+
+            # Optional: remove containers
+            docker rm ${MIDDLEWARE_CONTAINER_NAME}
+            # docker rm ${RAG_CONTAINER_NAME}
+            # docker rm ${VECTORIZER_CONTAINER_NAME}
+            docker rm embedding-service-ollama
+            docker rm embedding-service-baai
+
             echo "Building embedding-service-baai..."
             docker build \
               -t embedding-service:baai-bge-m3 \
