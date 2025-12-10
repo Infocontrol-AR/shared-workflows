@@ -224,7 +224,7 @@ jobs:
     needs: [build, pre-build]
     runs-on: [self-hosted]
     environment: ${{ inputs.environment }}
-    if: ${{ vars.ENVIRONMENT_FROZEN != 'true'}} 
+    if: ${{ vars.ENVIRONMENT_FROZEN == 'true'}} 
     steps:
       - run: | 
           if [[ "${{ vars.ENVIRONMENT_FROZEN }}" == "true" ]]; then
