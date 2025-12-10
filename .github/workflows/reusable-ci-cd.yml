@@ -288,10 +288,11 @@ jobs:
             sed -i "s|FW_ENDPOINT=.*|FW_ENDPOINT=${{ secrets.FW_ENDPOINT }}|g" .env
             sed -i "s|FW_MODEL=.*|FW_MODEL=${{ secrets.FW_MODEL }}|g" .env
             sed -i "s|DEBUG=.*|DEBUG=${{ vars.DEBUG }}|g" .env
-            echo >> .env
-            echo DOCKER_REGISTRY=${{ inputs.DOCKER_REGISTRY }} >> .env
-            echo DOCKER_IMAGE_NAME=${{ inputs.DOCKER_IMAGE_NAME }} >> .env
-            echo VERSION=${{ needs.pre-build.outputs.version }} >> .env
+
+            sed -i "s|DOCKER_REGISTRY=.*|DOCKER_REGISTRY=${{ inputs.DOCKER_REGISTRY }}|g" .env
+            sed -i "s|DOCKER_IMAGE_NAME=.*|DOCKER_IMAGE_NAME=${{ inputs.DOCKER_IMAGE_NAME }}|g" .env
+            sed -i "s|VERSION=.*|VERSION=${{ needs.pre-build.outputs.version }}|g" .env
+
             cat .env
             chmod +x ./*.sh
             docker compose down --rmi all --volumes --remove-orphans
