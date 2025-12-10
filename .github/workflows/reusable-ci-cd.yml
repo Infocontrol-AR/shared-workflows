@@ -36,20 +36,20 @@ on:
         description: 'Deployment environment'
         required: true
         type: string
-    secrets:
-
-      SSH_PASSWORD:
-        description: 'SSH_PASSWORD for deployment server'
-        required: true
-      SSH_IP:
-        description: 'SSH_IP for deployment server'
-        required: true 
-      DOCKER_USERNAME:
-        description: 'DOCKER_USERNAME'
-        required: true
-      DOCKER_PASSWORD:
-        description: 'DOCKER_PASSWORD'
-        required: true
+#    secrets:
+#
+#      SSH_PASSWORD:
+#        description: 'SSH_PASSWORD for deployment server'
+#        required: true
+#      SSH_IP:
+#        description: 'SSH_IP for deployment server'
+#        required: true 
+#      DOCKER_USERNAME:
+#        description: 'DOCKER_USERNAME'
+#        required: true
+#      DOCKER_PASSWORD:
+#        description: 'DOCKER_PASSWORD'
+#        required: true
 
 jobs:
 
