@@ -230,10 +230,10 @@ jobs:
     # if: ${{ vars.ENVIRONMENT_FROZEN == 'true'}} 
     steps:
       - run: | 
-          #if [[ "${{ vars.ENVIRONMENT_FROZEN }}" == "true" ]]; then
-          #  echo "Environment is frozen. Skipping deployment."
-          #  exit 0
-          #fi
+          if [[ "${{ vars.ENVIRONMENT_FROZEN }}" == "true" ]]; then
+            echo "Environment is frozen. Skipping deployment."
+            exit 0
+          fi
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
 
             echo "Running on remote machine..."
