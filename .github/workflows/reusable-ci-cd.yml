@@ -246,9 +246,7 @@ jobs:
       # Transfer script to remote server
       - name: Transfer script to remote server
         run: |
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no \
-            /tmp/update-env.sh \
-            neteng@${{ secrets.SSH_IP }}:/tmp/update-env.sh
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no /tmp/update-env.sh neteng@${{ secrets.SSH_IP }}:/tmp/update-env.sh
       
       # Run deployment script on remote server      
 
