@@ -229,6 +229,29 @@ jobs:
     environment: ${{ inputs.environment }}
     # if: ${{ vars.ENVIRONMENT_FROZEN == 'true'}} 
     steps:
+
+      - name: Checkout shared workflows repo
+        uses: actions/checkout@v3
+        with:
+          repository: Infocontrol-AR/shared-workflows
+          ref: main
+          path: shared-workflows
+      
+      # Copy script to a temporary location accessible via SSH
+      - name: Prepare deployment script
+        run: |
+          cp shared-workflows/scripts/update-env.sh /tmp/update-env.sh
+          chmod +x /tmp/update-env.sh
+      
+      # Transfer script to remote server
+      - name: Transfer script to remote server
+        run: |
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no \
+            /tmp/update-env.sh \
+            neteng@${{ secrets.SSH_IP }}:/tmp/update-env.sh
+      
+      # Run deployment script on remote server      
+
       - run: | 
           export DOCKER_REGISTRY=${{ inputs.DOCKER_REGISTRY }}
           export DOCKER_IMAGE_NAME=${{ inputs.DOCKER_IMAGE_NAME }}
