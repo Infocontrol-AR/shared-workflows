@@ -295,12 +295,11 @@ jobs:
             sed -i "s|DOCKER_IMAGE_NAME=.*|DOCKER_IMAGE_NAME=${{ inputs.DOCKER_IMAGE_NAME }}|g" .env
             sed -i "s|VERSION=.*|VERSION=${{ needs.pre-build.outputs.version }}|g" .env
 
-            cat .env
-            export $(cat .env | xargs)
+            # cat .env
             
-            #if ! docker network inspect "${NETWORK_NAME}" >/dev/null 2>&1; then
-            #  docker network create --driver bridge "${NETWORK_NAME}"
-            #fi
+            set -a
+            source .env
+            set +a
 
             docker network create ${NETWORK_NAME} 2>/dev/null || echo "Network ${NETWORK_NAME} already exists"
 
@@ -309,9 +308,6 @@ jobs:
             docker volume create huggingface-cache 2>/dev/null || echo "Volume huggingface-cache already exists"
             docker volume create middleware-consumer 2>/dev/null || echo "Volume middleware-consumer already exists"
 
-            # ============================================
-            # Build and Run BAAI-bge-m3 Embedding Service
-            # ============================================
             echo "Building embedding-service-baai..."
             docker build \
               -t embedding-service:baai-bge-m3 \
@@ -343,9 +339,6 @@ jobs:
               --health-start-period=120s \
               embedding-service:baai-bge-m3
 
-            # ============================================
-            # Build and Run Ollama-bge-m3 Embedding Service
-            # ============================================
             echo "Building embedding-service-ollama..."
             docker build \
               -t embedding-service-ollama:latest \
@@ -376,49 +369,40 @@ jobs:
             done
             echo "embedding-service-baai is healthy!"
 
-            # ============================================
-            # Build and Run Vectorizer Service
-            # ============================================
-            echo "Building vectorizer..."
-            docker build \
-              -t ${VECTORIZER_CONTAINER_NAME}:latest \
-              -f ../${VECTORIZER_FOLDER_NAME}/Dockerfile \
-              ../${VECTORIZER_FOLDER_NAME}
+            #echo "Building vectorizer..."
+            #docker build \
+            #  -t ${VECTORIZER_CONTAINER_NAME}:latest \
+            #  -f ../${VECTORIZER_FOLDER_NAME}/Dockerfile \
+            #  ../${VECTORIZER_FOLDER_NAME}
 
-            echo "Running vectorizer..."
-            docker run -d \
-              --name ${VECTORIZER_CONTAINER_NAME} \
-              --env-file .env \
-              --network ${NETWORK_NAME} \
-              --restart no \
-              -p ${VECTORIZER_PORT}:${VECTORIZER_PORT} \
-              --cpus=${VECTORIZER_LIMIT_CPU} \
-              --memory=${VECTORIZER_LIMIT_MEM}m \
-              ${VECTORIZER_CONTAINER_NAME}:latest
+            #echo "Running vectorizer..."
+            #docker run -d \
+            #  --name ${VECTORIZER_CONTAINER_NAME} \
+            #  --env-file .env \
+            #  --network ${NETWORK_NAME} \
+            #  --restart no \
+            #  -p ${VECTORIZER_PORT}:${VECTORIZER_PORT} \
+            #  --cpus=${VECTORIZER_LIMIT_CPU} \
+            #  --memory=${VECTORIZER_LIMIT_MEM}m \
+            #  ${VECTORIZER_CONTAINER_NAME}:latest
 
-            # ============================================
-            # Build and Run RAG Service
-            # ============================================
-            echo "Building rag-service..."
-            docker build \
-              -t ${RAG_CONTAINER_NAME}:latest \
-              -f ../${RAG_FOLDER_NAME}/Dockerfile \
-              ../${RAG_FOLDER_NAME}
+            #echo "Building rag-service..."
+            #docker build \
+            #  -t ${RAG_CONTAINER_NAME}:latest \
+            #  -f ../${RAG_FOLDER_NAME}/Dockerfile \
+            #  ../${RAG_FOLDER_NAME}
 
-            echo "Running rag-service..."
-            docker run -d \
-              --name ${RAG_CONTAINER_NAME} \
-              --env-file .env \
-              --network ${NETWORK_NAME} \
-              --restart unless-stopped \
-              -p ${RAG_SERVICE_PORT}:${RAG_SERVICE_PORT} \
-              --cpus=${RAG_LIMIT_CPU} \
-              --memory=${RAG_LIMIT_MEM}m \
-              ${RAG_CONTAINER_NAME}:latest
+            #echo "Running rag-service..."
+            #docker run -d \
+            #  --name ${RAG_CONTAINER_NAME} \
+            #  --env-file .env \
+            #  --network ${NETWORK_NAME} \
+            #  --restart unless-stopped \
+            #  -p ${RAG_SERVICE_PORT}:${RAG_SERVICE_PORT} \
+            #  --cpus=${RAG_LIMIT_CPU} \
+            #  --memory=${RAG_LIMIT_MEM}m \
+            #  ${RAG_CONTAINER_NAME}:latest
 
-            # ============================================
-            # Run Middleware Consumer Service (using pre-built image)
-            # ============================================
             echo "Running middleware-consumer..."
             docker run -d \
               --name ${MIDDLEWARE_CONTAINER_NAME} \
