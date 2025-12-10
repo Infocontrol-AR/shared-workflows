@@ -233,7 +233,7 @@ jobs:
           export DOCKER_REGISTRY=${{ inputs.DOCKER_REGISTRY }}
           export DOCKER_IMAGE_NAME=${{ inputs.DOCKER_IMAGE_NAME }}
           export VERSION=${{ needs.pre-build.outputs.version }}
-          echo "${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${version}"
+          echo "${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${VERSION}"
           
           if [[ "${{ vars.ENVIRONMENT_FROZEN }}" == "true" ]]; then
             echo "Environment is frozen. Skipping deployment."
@@ -288,7 +288,9 @@ jobs:
             sed -i "s|FW_ENDPOINT=.*|FW_ENDPOINT=${{ secrets.FW_ENDPOINT }}|g" .env
             sed -i "s|FW_MODEL=.*|FW_MODEL=${{ secrets.FW_MODEL }}|g" .env
             sed -i "s|DEBUG=.*|DEBUG=${{ vars.DEBUG }}|g" .env
-
+            echo DOCKER_REGISTRY=${{ inputs.DOCKER_REGISTRY }} >> .env
+            echo DOCKER_IMAGE_NAME=${{ inputs.DOCKER_IMAGE_NAME }} >> .env
+            echo VERSION=${{ needs.pre-build.outputs.version }} >> .env
             cat .env
             chmod +x ./*.sh
             docker compose down --rmi all --volumes --remove-orphans
