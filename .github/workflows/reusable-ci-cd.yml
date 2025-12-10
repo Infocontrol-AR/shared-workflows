@@ -298,13 +298,152 @@ jobs:
             cat .env
             export $(cat .env | xargs)
             
-            if ! docker network inspect "${NETWORK_NAME}" >/dev/null 2>&1; then
-              docker network create --driver bridge "${NETWORK_NAME}"
-            fi
+            #if ! docker network inspect "${NETWORK_NAME}" >/dev/null 2>&1; then
+            #  docker network create --driver bridge "${NETWORK_NAME}"
+            #fi
 
-            # chmod +x ./*.sh
-            docker compose down --rmi all --volumes --remove-orphans
-            docker compose up --build -d
+            docker network create ${NETWORK_NAME} 2>/dev/null || echo "Network ${NETWORK_NAME} already exists"
+
+            # Create volumes if they don't exist
+            docker volume create ollama_data 2>/dev/null || echo "Volume ollama_data already exists"
+            docker volume create huggingface-cache 2>/dev/null || echo "Volume huggingface-cache already exists"
+            docker volume create middleware-consumer 2>/dev/null || echo "Volume middleware-consumer already exists"
+
+            # ============================================
+            # Build and Run BAAI-bge-m3 Embedding Service
+            # ============================================
+            echo "Building embedding-service-baai..."
+            docker build \
+              -t embedding-service:baai-bge-m3 \
+              -f embedding-services/BAAI-bge-m3/Dockerfile \
+              .
+
+            echo "Running embedding-service-baai..."
+            docker run -d \
+              --name embedding-service-baai \
+              --env-file .env \
+              -e EMBEDDING_MODEL=${EMBEDDING_MODEL} \
+              -e EMBEDDING_DEVICE=${EMBEDDING_DEVICE} \
+              -e EMBEDDING_BATCH_SIZE=${EMBEDDING_BATCH_SIZE} \
+              -e EMBEDDING_SERVICE_PORT=${EMBEDDING_SERVICE_PORT} \
+              -e PYTORCH_NUM_THREADS=${PYTORCH_NUM_THREADS} \
+              -e OMP_NUM_THREADS=${OMP_NUM_THREADS} \
+              -p ${EMBEDDING_SERVICE_PORT}:${EMBEDDING_SERVICE_PORT} \
+              --network ${NETWORK_NAME} \
+              --restart unless-stopped \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v huggingface-cache:/root/.cache/huggingface \
+              --cpus="8.0" \
+              --memory=8000m \
+              --memory-reservation=4000m \
+              --health-cmd="python -c \"import requests; requests.get('http://localhost:${EMBEDDING_SERVICE_PORT:-8025}/health', timeout=5).raise_for_status()\"" \
+              --health-interval=30s \
+              --health-timeout=10s \
+              --health-retries=5 \
+              --health-start-period=120s \
+              embedding-service:baai-bge-m3
+
+            # ============================================
+            # Build and Run Ollama-bge-m3 Embedding Service
+            # ============================================
+            echo "Building embedding-service-ollama..."
+            docker build \
+              -t embedding-service-ollama:latest \
+              -f embedding-services/OLLAMA-bge-m3/Dockerfile \
+              embedding-services/OLLAMA-bge-m3
+
+            echo "Running embedding-service-ollama..."
+            docker run -d \
+              --name ${OLLAMA_CONTAINER_NAME} \
+              -p ${OLLAMA_PORT}:11434 \
+              -v ollama_data:/root/.ollama \
+              --network ${NETWORK_NAME} \
+              -e OLLAMA_DEBUG=false \
+              -e OLLAMA_LOG_LEVEL=warn \
+              --log-driver json-file \
+              --log-opt max-size=10m \
+              --log-opt max-file=2 \
+              --restart unless-stopped \
+              --cpus="2.0" \
+              --memory=4096m \
+              embedding-service-ollama:latest
+
+            # Wait for embedding-service-baai to be healthy
+            echo "Waiting for embedding-service-baai to be healthy..."
+            until [ "$(docker inspect --format='{{.State.Health.Status}}' embedding-service-baai)" == "healthy" ]; do
+              echo "Waiting for embedding-service-baai..."
+              sleep 5
+            done
+            echo "embedding-service-baai is healthy!"
+
+            # ============================================
+            # Build and Run Vectorizer Service
+            # ============================================
+            echo "Building vectorizer..."
+            docker build \
+              -t ${VECTORIZER_CONTAINER_NAME}:latest \
+              -f ../${VECTORIZER_FOLDER_NAME}/Dockerfile \
+              ../${VECTORIZER_FOLDER_NAME}
+
+            echo "Running vectorizer..."
+            docker run -d \
+              --name ${VECTORIZER_CONTAINER_NAME} \
+              --env-file .env \
+              --network ${NETWORK_NAME} \
+              --restart no \
+              -p ${VECTORIZER_PORT}:${VECTORIZER_PORT} \
+              --cpus=${VECTORIZER_LIMIT_CPU} \
+              --memory=${VECTORIZER_LIMIT_MEM}m \
+              ${VECTORIZER_CONTAINER_NAME}:latest
+
+            # ============================================
+            # Build and Run RAG Service
+            # ============================================
+            echo "Building rag-service..."
+            docker build \
+              -t ${RAG_CONTAINER_NAME}:latest \
+              -f ../${RAG_FOLDER_NAME}/Dockerfile \
+              ../${RAG_FOLDER_NAME}
+
+            echo "Running rag-service..."
+            docker run -d \
+              --name ${RAG_CONTAINER_NAME} \
+              --env-file .env \
+              --network ${NETWORK_NAME} \
+              --restart unless-stopped \
+              -p ${RAG_SERVICE_PORT}:${RAG_SERVICE_PORT} \
+              --cpus=${RAG_LIMIT_CPU} \
+              --memory=${RAG_LIMIT_MEM}m \
+              ${RAG_CONTAINER_NAME}:latest
+
+            # ============================================
+            # Run Middleware Consumer Service (using pre-built image)
+            # ============================================
+            echo "Running middleware-consumer..."
+            docker run -d \
+              --name ${MIDDLEWARE_CONTAINER_NAME} \
+              -p ${MIDDLEWARE_PORT}:8000 \
+              --env-file .env \
+              -e MODE=${MODE:-consumer} \
+              --network ${NETWORK_NAME} \
+              --restart ${RESTART_POLICY} \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v $(pwd):/app \
+              -v /app/certs:/app/app/certs:ro \
+              --cpus=${MIDDLEWARE_LIMIT_CPU} \
+              --memory=${MIDDLEWARE_LIMIT_MEM}m \
+              --health-cmd="python app/scripts/healthcheck_kafka.py" \
+              --health-interval=30s \
+              --health-timeout=10s \
+              --health-retries=5 \
+              --health-start-period=20s \
+              ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${VERSION}
+
+            echo "All services started successfully!"
+            echo "To view logs: docker logs -f <container-name>"
+            echo "To stop all services: docker stop <container-names>"
+            # docker compose down --rmi all --volumes --remove-orphans
+            # docker compose up --build -d
             exit 0
           EOF
       - run: echo "Deployment completed successfully!"
