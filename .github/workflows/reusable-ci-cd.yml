@@ -50,6 +50,48 @@ on:
       DOCKER_PASSWORD:
         description: 'DOCKER_PASSWORD'
         required: true
+      AZURE_STORAGE_ACCOUNT_NAME:
+        description: 'AZURE_STORAGE_ACCOUNT_NAME'
+        required: true
+      AZURE_STORAGE_CONNECTION_STRING:
+        description: 'AZURE_STORAGE_CONNECTION_STRING'
+        required: true
+      AZURE_STORAGE_CONTAINER_NAME:
+        description: 'AZURE_STORAGE_CONTAINER_NAME'
+        required: true
+      EMBEDDING_MODEL:
+        description: 'EMBEDDING_MODEL'
+        required: true
+      FIREWORKS_API_KEY:
+        description: 'FIREWORKS_API_KEY'
+        required: true
+      FIREWORKS_MODEL:
+        description: 'FIREWORKS_MODEL'
+        required: true
+      FW_API_KEY:
+        description: 'FW_API_KEY'
+        required: true
+      FW_ENDPOINT:
+        description: 'FW_ENDPOINT'
+        required: true
+      FW_MODEL:
+        description: 'FW_MODEL'
+        required: true
+      LLAMAPARSE_API_KEY:
+        description: 'LLAMAPARSE_API_KEY'
+        required: true
+      QDRANT_API_KEY:
+        description: 'QDRANT_API_KEY'
+        required: true
+      QDRANT_URL:
+        description: 'QDRANT_URL'
+        required: true
+      UNSTRUCTURED_API_KEY:
+        description: 'UNSTRUCTURED_API_KEY'
+        required: true
+      UNSTRUCTURED_API_URL:
+        description: 'UNSTRUCTURED_API_URL'
+        required: true
 
 jobs:
 
