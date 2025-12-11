@@ -265,7 +265,11 @@ jobs:
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no /tmp/deployment.sh neteng@${{ secrets.SSH_IP }}:/tmp/deployment.sh  
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no .env.example neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/.env.example  
 
-      - run: | 
+      - name: Deploy to remote server
+        env:
+          CONTAINER_NAME: ${{ inputs.CONTAINER_NAME }}
+          CONTAINER_PORT: ${{ inputs.CONTAINER_PORT }}
+        run: | 
 
           if [[ "${{ vars.ENVIRONMENT_FROZEN }}" == "true" ]]; then
             echo "Environment is frozen. Skipping deployment."
