@@ -20,7 +20,15 @@ on:
         description: 'Path to Dockerfile'
         required: false
         type: string
-        default: './Dockerfile'  
+        default: './Dockerfile'
+      CONTAINER_NAME:
+        description: 'Name of the main container'
+        required: true
+        type: string
+      CONTAINER_PORT:
+        description: 'Port of the main container'
+        required: true
+        type: string
       FROZEN_ENVIRONMENT:
         description: 'Whether to deploy after build'
         required: false
@@ -308,10 +316,9 @@ jobs:
             docker volume create huggingface-cache 2>/dev/null || echo "Volume huggingface-cache already exists"
             docker volume create middleware-consumer 2>/dev/null || echo "Volume middleware-consumer already exists"
 
-            docker stop ${MIDDLEWARE_CONTAINER_NAME}
+            docker stop ${CONTAINER_NAME}
 
-            # Optional: remove containers
-            docker rm ${MIDDLEWARE_CONTAINER_NAME}
+            docker rm ${CONTAINER_NAME}
 
             #echo "Building embedding-service-baai..."
             #docker build \
@@ -376,8 +383,8 @@ jobs:
 
             echo "Running middleware-consumer..."
             docker run -d \
-              --name ${MIDDLEWARE_CONTAINER_NAME} \
-              -p ${MIDDLEWARE_PORT}:8000 \
+              --name ${CONTAINER_NAME} \
+              -p ${CONTAINER_PORT}:8000 \
               --env-file .env \
               -e MODE=${MODE:-consumer} \
               --network ${NETWORK_NAME} \
