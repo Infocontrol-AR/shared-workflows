@@ -308,8 +308,6 @@ jobs:
             source .env
             set +a
 
-            cat .env
-
             docker network create ${NETWORK_NAME} 2>/dev/null || echo "Network ${NETWORK_NAME} already exists"
 
             # Create volumes if they don't exist
@@ -381,7 +379,7 @@ jobs:
             #  sleep 5
             #done
             #echo "embedding-service-baai is healthy!"
-            
+            printenv
             cat /tmp/deployment.sh
             /tmp/deployment.sh
 
