@@ -262,6 +262,7 @@ jobs:
       - name: Transfer deployment files to remote server
         run: |
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no /tmp/update-env.sh neteng@${{ secrets.SSH_IP }}:/tmp/update-env.sh  
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no /tmp/deployment.sh neteng@${{ secrets.SSH_IP }}:/tmp/deployment.sh  
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no .env.example neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/.env.example  
 
       - run: | 
@@ -324,7 +325,7 @@ jobs:
             docker stop ${{ inputs.CONTAINER_NAME }} 2>/dev/null || echo "Container ${{ inputs.CONTAINER_NAME }} not running"
 
             docker rm ${{ inputs.CONTAINER_NAME }} 2>/dev/null || echo "Container ${{ inputs.CONTAINER_NAME }} does not exist"
-            
+
             #echo "Building embedding-service-baai..."
             #docker build \
             #  -t embedding-service:baai-bge-m3 \
