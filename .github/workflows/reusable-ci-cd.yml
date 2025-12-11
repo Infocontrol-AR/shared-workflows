@@ -311,16 +311,6 @@ jobs:
             export CONTAINER_NAME=${{ inputs.CONTAINER_NAME }}
             export CONTAINER_PORT=${{ inputs.CONTAINER_PORT }}
 
-            docker network create ${NETWORK_NAME} 2>/dev/null || echo "Network ${NETWORK_NAME} already exists"
-
-            # Create volumes if they don't exist
-            docker volume create ollama_data 2>/dev/null || echo "Volume ollama_data already exists"
-            docker volume create huggingface-cache 2>/dev/null || echo "Volume huggingface-cache already exists"
-            docker volume create middleware-consumer 2>/dev/null || echo "Volume middleware-consumer already exists"
-
-            docker stop ${{ inputs.CONTAINER_NAME }} 2>/dev/null || echo "Container ${{ inputs.CONTAINER_NAME }} not running"
-
-            docker rm ${{ inputs.CONTAINER_NAME }} 2>/dev/null || echo "Container ${{ inputs.CONTAINER_NAME }} does not exist"
 
             #echo "Building embedding-service-baai..."
             #docker build \
@@ -382,8 +372,7 @@ jobs:
             #  sleep 5
             #done
             #echo "embedding-service-baai is healthy!"
-            printenv
-            cat /tmp/deployment.sh
+
             /tmp/deployment.sh
 
             #docker run -d \
@@ -406,10 +395,8 @@ jobs:
             #  ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${VERSION}
 
             echo "All services started successfully!"
-            echo "To view logs: docker logs -f <container-name>"
-            echo "To stop all services: docker stop <container-names>"
-            # docker compose down --rmi all --volumes --remove-orphans
-            # docker compose up --build -d
+            echo "To view logs --> docker logs -f ${CONTAINER_NAME}"
+
             exit 0
           EOF
       - run: echo "Deployment completed successfully!"
