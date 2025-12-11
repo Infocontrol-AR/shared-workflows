@@ -15,10 +15,12 @@ on:
         description: 'DOCKER_IMAGE_NAME'
         required: true
         type: string
-      # DOCKER_TAG:
-      #  description: 'DOCKER_TAG with which to tag the image'
-      #  required: true
-      #  type: string
+
+      DOCKERFILE_PATH:
+        description: 'Path to Dockerfile'
+        required: false
+        type: string
+        default: './Dockerfile'  
       FROZEN_ENVIRONMENT:
         description: 'Whether to deploy after build'
         required: false
@@ -152,7 +154,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: ${{ inputs.DOCKERFILE_PATH }}
           push: true
           tags: ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }} # latest-${{ github.run_id }}
           
