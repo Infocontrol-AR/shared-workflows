@@ -170,7 +170,7 @@ jobs:
       - name: Build and push Docker image with dynamic tag
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./embedding-services/BAAI-bge-m3
           file: ${{ inputs.DOCKERFILE_PATH }}
           push: true
           tags: ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }} # latest-${{ github.run_id }}
