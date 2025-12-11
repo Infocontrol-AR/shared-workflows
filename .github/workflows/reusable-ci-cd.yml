@@ -387,7 +387,7 @@ jobs:
             #done
             #echo "embedding-service-baai is healthy!"
 
-            ./tmp/deployment.sh
+            /tmp/deployment.sh
 
             #docker run -d \
             #  --name ${CONTAINER_NAME} \
