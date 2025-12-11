@@ -123,6 +123,11 @@ jobs:
       - id: compute_version
         shell: bash
         run: |
+
+          if [[ "${{ inputs.VERSION_FILE_NAME }}" == "None" ]]; then
+            echo "Using hardcoded version."
+            exit 0
+          fi
           ref="${GITHUB_REF_NAME}"
           if [ "$ref" = "develop" ]; then
             echo "version=latest-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
