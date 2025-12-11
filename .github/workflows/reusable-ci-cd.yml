@@ -29,6 +29,10 @@ on:
         description: 'Port of the main container'
         required: true
         type: string
+      DEPLOYMENT_SCRIPT_PATH:
+        description: 'Path to deployment script'
+        required: true
+        type: string
       FROZEN_ENVIRONMENT:
         description: 'Whether to deploy after build'
         required: false
@@ -248,11 +252,12 @@ jobs:
           ref: main
           path: shared-workflows
       
-      # Copy script to a temporary location accessible via SSH
-      - name: Prepare deployment script
+      # Copy scripts to a temporary location accessible via SSH
+      - name: Prepare deployment scripts
         run: |
           cp shared-workflows/scripts/update-env.sh /tmp/update-env.sh
-          chmod +x /tmp/update-env.sh
+          cp ${{ inputs.DEPLOYMENT_SCRIPT_PATH }} /tmp/deployment.sh
+          chmod +x /tmp/*.sh
       
       - name: Transfer deployment files to remote server
         run: |
@@ -381,25 +386,26 @@ jobs:
             #done
             #echo "embedding-service-baai is healthy!"
 
-            echo "Running middleware-consumer..."
-            docker run -d \
-              --name ${CONTAINER_NAME} \
-              -p ${CONTAINER_PORT}:8000 \
-              --env-file .env \
-              -e MODE=${MODE:-consumer} \
-              --network ${NETWORK_NAME} \
-              --restart ${RESTART_POLICY} \
-              -v /var/run/docker.sock:/var/run/docker.sock \
-              -v $(pwd):/app \
-              -v /app/certs:/app/app/certs:ro \
-              --cpus=${MIDDLEWARE_LIMIT_CPU} \
-              --memory=${MIDDLEWARE_LIMIT_MEM}m \
-              --health-cmd="python app/scripts/healthcheck_kafka.py" \
-              --health-interval=30s \
-              --health-timeout=10s \
-              --health-retries=5 \
-              --health-start-period=20s \
-              ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${VERSION}
+            ./tmp/deployment.sh
+
+            #docker run -d \
+            #  --name ${CONTAINER_NAME} \
+            #  -p ${CONTAINER_PORT}:8000 \
+            #  --env-file .env \
+            #  -e MODE=${MODE:-consumer} \
+            #  --network ${NETWORK_NAME} \
+            #  --restart ${RESTART_POLICY} \
+            #  -v /var/run/docker.sock:/var/run/docker.sock \
+            #  -v $(pwd):/app \
+            #  -v /app/certs:/app/app/certs:ro \
+            #  --cpus=${MIDDLEWARE_LIMIT_CPU} \
+            #  --memory=${MIDDLEWARE_LIMIT_MEM}m \
+            #  --health-cmd="python app/scripts/healthcheck_kafka.py" \
+            #  --health-interval=30s \
+            #  --health-timeout=10s \
+            #  --health-retries=5 \
+            #  --health-start-period=20s \
+            #  ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${VERSION}
 
             echo "All services started successfully!"
             echo "To view logs: docker logs -f <container-name>"
