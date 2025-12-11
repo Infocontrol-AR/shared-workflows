@@ -155,6 +155,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }} # latest-${{ github.run_id }}
+          
       - name: Run Trivy scan on private image
         uses: aquasecurity/trivy-action@master
         with:
@@ -291,36 +292,33 @@ jobs:
                 git checkout -b "${{ github.ref_name }}" origin/"${{ github.ref_name }}"
             fi
             mv .env.example .env
-            sed -i "s|QDRANT_URL=.*|QDRANT_URL=${{ secrets.QDRANT_URL }}|g" .env
-            sed -i "s|QDRANT_API_KEY=.*|QDRANT_API_KEY=${{ secrets.QDRANT_API_KEY }}|g" .env
-            sed -i "s|EMBEDDING_MODEL=.*|EMBEDDING_MODEL=${{ secrets.EMBEDDING_MODEL }}|g" .env
- 
-            sed -i "s|AZURE_STORAGE_SAS_TOKEN=.*|AZURE_STORAGE_SAS_TOKEN=${{ secrets.AZURE_STORAGE_SAS_TOKEN }}|g" .env
-            sed -i "s|AZURE_STORAGE_ACCOUNT_NAME=.*|AZURE_STORAGE_ACCOUNT_NAME=${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}|g" .env
-            sed -i "s|AZURE_STORAGE_CONTAINER_NAME=.*|AZURE_STORAGE_CONTAINER_NAME=${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}|g" .env
- 
-            sed -i "s|UNSTRUCTURED_API_URL=.*|UNSTRUCTURED_API_URL=${{ secrets.UNSTRUCTURED_API_URL }}|g" .env
-            sed -i "s|UNSTRUCTURED_API_KEY=.*|UNSTRUCTURED_API_KEY=${{ secrets.UNSTRUCTURED_API_KEY }}|g" .env
- 
-            sed -i "s|LLAMAPARSE_API_KEY=.*|LLAMAPARSE_API_KEY=${{ secrets.LLAMAPARSE_API_KEY }}|g" .env
- 
-            sed -i "s|FIREWORKS_API_KEY=.*|FIREWORKS_API_KEY=${{ secrets.FIREWORKS_API_KEY }}|g" .env
-            sed -i "s|FIREWORKS_MODEL=.*|FIREWORKS_MODEL=${{ secrets.FIREWORKS_MODEL }}|g" .env
 
-            sed -i "s|FW_API_KEY=.*|FW_API_KEY=${{ secrets.FW_API_KEY }}|g" .env
-            sed -i "s|FW_ENDPOINT=.*|FW_ENDPOINT=${{ secrets.FW_ENDPOINT }}|g" .env
-            sed -i "s|FW_MODEL=.*|FW_MODEL=${{ secrets.FW_MODEL }}|g" .env
-            sed -i "s|DEBUG=.*|DEBUG=${{ vars.DEBUG }}|g" .env
-
-            sed -i "s|DOCKER_REGISTRY=.*|DOCKER_REGISTRY=${{ inputs.DOCKER_REGISTRY }}|g" .env
-            sed -i "s|DOCKER_IMAGE_NAME=.*|DOCKER_IMAGE_NAME=${{ inputs.DOCKER_IMAGE_NAME }}|g" .env
-            sed -i "s|VERSION=.*|VERSION=${{ needs.pre-build.outputs.version }}|g" .env
-
-            # cat .env
+            chmod +x /tmp/update-env.sh
+            /tmp/update-env.sh .env \
+              QDRANT_URL "${{ secrets.QDRANT_URL }}" \
+              QDRANT_API_KEY "${{ secrets.QDRANT_API_KEY }}" \
+              EMBEDDING_MODEL "${{ secrets.EMBEDDING_MODEL }}" \
+              AZURE_STORAGE_SAS_TOKEN "${{ secrets.AZURE_STORAGE_SAS_TOKEN }}" \
+              AZURE_STORAGE_ACCOUNT_NAME "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}" \
+              AZURE_STORAGE_CONTAINER_NAME "${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}" \
+              UNSTRUCTURED_API_URL "${{ secrets.UNSTRUCTURED_API_URL }}" \
+              UNSTRUCTURED_API_KEY "${{ secrets.UNSTRUCTURED_API_KEY }}" \
+              LLAMAPARSE_API_KEY "${{ secrets.LLAMAPARSE_API_KEY }}" \
+              FIREWORKS_API_KEY "${{ secrets.FIREWORKS_API_KEY }}" \
+              FIREWORKS_MODEL "${{ secrets.FIREWORKS_MODEL }}" \
+              FW_API_KEY "${{ secrets.FW_API_KEY }}" \
+              FW_ENDPOINT "${{ secrets.FW_ENDPOINT }}" \
+              FW_MODEL "${{ secrets.FW_MODEL }}" \
+              DEBUG "${{ vars.DEBUG }}" \
+              DOCKER_REGISTRY "${{ inputs.DOCKER_REGISTRY }}" \
+              DOCKER_IMAGE_NAME "${{ inputs.DOCKER_IMAGE_NAME }}" \
+              VERSION "${{ needs.pre-build.outputs.version }}"
             
             set -a
             source .env
             set +a
+
+            cat .env
 
             docker network create ${NETWORK_NAME} 2>/dev/null || echo "Network ${NETWORK_NAME} already exists"
 
@@ -330,17 +328,9 @@ jobs:
             docker volume create middleware-consumer 2>/dev/null || echo "Volume middleware-consumer already exists"
 
             docker stop ${MIDDLEWARE_CONTAINER_NAME}
-            # docker stop ${RAG_CONTAINER_NAME}
-            # docker stop ${VECTORIZER_CONTAINER_NAME}
-            #docker stop embedding-service-ollama
-            #docker stop embedding-service-baai
 
             # Optional: remove containers
             docker rm ${MIDDLEWARE_CONTAINER_NAME}
-            # docker rm ${RAG_CONTAINER_NAME}
-            # docker rm ${VECTORIZER_CONTAINER_NAME}
-            #docker rm embedding-service-ollama
-            #docker rm embedding-service-baai
 
             #echo "Building embedding-service-baai..."
             #docker build \
@@ -402,40 +392,6 @@ jobs:
             #  sleep 5
             #done
             #echo "embedding-service-baai is healthy!"
-
-            #echo "Building vectorizer..."
-            #docker build \
-            #  -t ${VECTORIZER_CONTAINER_NAME}:latest \
-            #  -f ../${VECTORIZER_FOLDER_NAME}/Dockerfile \
-            #  ../${VECTORIZER_FOLDER_NAME}
-
-            #echo "Running vectorizer..."
-            #docker run -d \
-            #  --name ${VECTORIZER_CONTAINER_NAME} \
-            #  --env-file .env \
-            #  --network ${NETWORK_NAME} \
-            #  --restart no \
-            #  -p ${VECTORIZER_PORT}:${VECTORIZER_PORT} \
-            #  --cpus=${VECTORIZER_LIMIT_CPU} \
-            #  --memory=${VECTORIZER_LIMIT_MEM}m \
-            #  ${VECTORIZER_CONTAINER_NAME}:latest
-
-            #echo "Building rag-service..."
-            #docker build \
-            #  -t ${RAG_CONTAINER_NAME}:latest \
-            #  -f ../${RAG_FOLDER_NAME}/Dockerfile \
-            #  ../${RAG_FOLDER_NAME}
-
-            #echo "Running rag-service..."
-            #docker run -d \
-            #  --name ${RAG_CONTAINER_NAME} \
-            #  --env-file .env \
-            #  --network ${NETWORK_NAME} \
-            #  --restart unless-stopped \
-            #  -p ${RAG_SERVICE_PORT}:${RAG_SERVICE_PORT} \
-            #  --cpus=${RAG_LIMIT_CPU} \
-            #  --memory=${RAG_LIMIT_MEM}m \
-            #  ${RAG_CONTAINER_NAME}:latest
 
             echo "Running middleware-consumer..."
             docker run -d \
