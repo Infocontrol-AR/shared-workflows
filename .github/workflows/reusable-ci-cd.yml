@@ -125,7 +125,7 @@ jobs:
         run: |
           if [[ "${{ inputs.VERSION_FILE_NAME }}" == "None" ]]; then
             echo "Using hardcoded version."
-            echo "version=baai-bge-m3" >> "$GITHUB_OUTPUT"
+            echo "version=bge-m3" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           ref="${GITHUB_REF_NAME}"
