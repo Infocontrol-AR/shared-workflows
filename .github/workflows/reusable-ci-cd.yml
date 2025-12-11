@@ -246,12 +246,10 @@ jobs:
           cp shared-workflows/scripts/update-env.sh /tmp/update-env.sh
           chmod +x /tmp/update-env.sh
       
-      # Transfer script to remote server
-      - name: Transfer script to remote server
+      - name: Transfer deployment files to remote server
         run: |
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no /tmp/update-env.sh neteng@${{ secrets.SSH_IP }}:/tmp/update-env.sh
-      
-      # Run deployment script on remote server      
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no /tmp/update-env.sh neteng@${{ secrets.SSH_IP }}:/tmp/update-env.sh  
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no .env.example neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/.env.example  
 
       - run: | 
           # export DOCKER_REGISTRY=${{ inputs.DOCKER_REGISTRY }}
@@ -274,26 +272,6 @@ jobs:
             docker login ${{ inputs.DOCKER_REGISTRY }} -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
             cd workspace
 
-            if [ ! -d "${{ github.event.repository.name }}" ]; then
-                echo "Folder does not exist, clonning code..."
-                git clone git@github.com:${{ github.repository }}.git
-                cd ${{ github.event.repository.name }}
-                git checkout ${{ github.ref_name }}
-            else
-                echo "Folder already exists. Initializing Git inside existing folder..."
-
-                REPO_URL="git@github.com:AI-ACHILLES/ai-middleware-v3.git"
-                echo "Repo URL: $REPO_URL"
-
-                cd ${{ github.event.repository.name }} || { echo "Cannot cd into FOLDER"; exit 1; }
-                git config --global init.defaultBranch main
-                git init
-                
-                git remote add origin "$REPO_URL"
-                
-                git pull
-                git checkout -b "${{ github.ref_name }}" origin/"${{ github.ref_name }}"
-            fi
             mv .env.example .env
 
             chmod +x /tmp/update-env.sh
