@@ -266,9 +266,6 @@ jobs:
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no .env.example neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/.env.example  
 
       - name: Deploy to remote server
-        env:
-          CONTAINER_NAME: ${{ inputs.CONTAINER_NAME }}
-          CONTAINER_PORT: ${{ inputs.CONTAINER_PORT }}
         run: | 
 
           if [[ "${{ vars.ENVIRONMENT_FROZEN }}" == "true" ]]; then
@@ -311,6 +308,8 @@ jobs:
             set -a
             source .env
             set +a
+            export CONTAINER_NAME=${{ inputs.CONTAINER_NAME }}
+            export CONTAINER_PORT=${{ inputs.CONTAINER_PORT }}
 
             docker network create ${NETWORK_NAME} 2>/dev/null || echo "Network ${NETWORK_NAME} already exists"
 
