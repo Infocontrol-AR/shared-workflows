@@ -321,10 +321,10 @@ jobs:
             docker volume create huggingface-cache 2>/dev/null || echo "Volume huggingface-cache already exists"
             docker volume create middleware-consumer 2>/dev/null || echo "Volume middleware-consumer already exists"
 
-            docker stop ${CONTAINER_NAME}
+            docker stop ${{ inputs.CONTAINER_NAME }} 2>/dev/null || echo "Container ${{ inputs.CONTAINER_NAME }} not running"
 
-            docker rm ${CONTAINER_NAME}
-
+            docker rm ${{ inputs.CONTAINER_NAME }} 2>/dev/null || echo "Container ${{ inputs.CONTAINER_NAME }} does not exist"
+            
             #echo "Building embedding-service-baai..."
             #docker build \
             #  -t embedding-service:baai-bge-m3 \
