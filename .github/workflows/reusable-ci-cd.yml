@@ -274,7 +274,7 @@ jobs:
             sed -i "s|QDRANT_API_KEY=.*|QDRANT_API_KEY=${{ secrets.QDRANT_API_KEY }}|g" .env
             sed -i "s|EMBEDDING_MODEL=.*|EMBEDDING_MODEL=${{ secrets.EMBEDDING_MODEL }}|g" .env
  
-            sed -i "s|AZURE_STORAGE_SAS_TOKEN=.*|AZURE_STORAGE_SAS_TOKEN=${{ secrets.AZURE_STORAGE_SAS_TOKEN }}|g" .env
+            perl -pi -e 's|^AZURE_STORAGE_SAS_TOKEN=.*|AZURE_STORAGE_SAS_TOKEN=${{ secrets.AZURE_STORAGE_SAS_TOKEN }}|g' .env
             sed -i "s|AZURE_STORAGE_ACCOUNT_NAME=.*|AZURE_STORAGE_ACCOUNT_NAME=${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}|g" .env
             sed -i "s|AZURE_STORAGE_CONTAINER_NAME=.*|AZURE_STORAGE_CONTAINER_NAME=${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}|g" .env
  
