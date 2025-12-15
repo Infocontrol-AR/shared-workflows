@@ -219,6 +219,7 @@ jobs:
           retention-days: 30
           if-no-files-found: warn    
       - name: Set up SonarQube project
+        if: ${{ inputs.environment == 'development' }} 
         run: |
           # Create project and get token
           PROJECT_KEY="${{ github.event.repository.name }}"
