@@ -287,6 +287,14 @@ jobs:
             docker login ${{ inputs.DOCKER_REGISTRY }} -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
             cd workspace
 
+            if [ ! -d "${{ github.event.repository.name }}" ]; then
+                echo "Folder does not exist, creating it..."
+                mkdir ${{ github.event.repository.name }}
+            fi    
+            
+            cd ${{ github.event.repository.name }}
+            
+            mv .env .env.bak || true
             mv .env.example .env
 
             chmod +x /tmp/update-env.sh
