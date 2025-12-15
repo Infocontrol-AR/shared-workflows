@@ -137,8 +137,8 @@ jobs:
           if [ "$ref" = "develop" ]; then
             echo "version=latest-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
           elif [ "$ref" = "qa" ] || [ "$ref" = "staging" ]; then
-            python3 /devops-tools/versionmanager.py increase ${{ vars.VERSION_FILE_NAME}}          
-            export version=$(python3 /devops-tools/versionmanager.py get ${{ vars.VERSION_FILE_NAME}})
+            python3 /devops-tools/versionmanager.py increase ${{ inputs.VERSION_FILE_NAME}}          
+            export version=$(python3 /devops-tools/versionmanager.py get ${{ inputs.VERSION_FILE_NAME}})
             export version="$(echo "$version" | tr -d '\r' | xargs)"
             git config --global user.email "devops@achilles.com"
             git config --global user.name "Achilles DevOps Bot"
