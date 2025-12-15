@@ -21,6 +21,11 @@ on:
         required: false
         type: string
         default: './Dockerfile'
+      DOCKER_CONTEXT_PATH:
+        description: 'Path to Docker build context'
+        required: false
+        type: string
+        default: '.'
       CONTAINER_NAME:
         description: 'Name of the main container'
         required: true
@@ -170,7 +175,7 @@ jobs:
       - name: Build and push Docker image with dynamic tag
         uses: docker/build-push-action@v5
         with:
-          context: . #/embedding-services/BAAI-bge-m3
+          context: ${{ inputs.DOCKER_CONTEXT_PATH }} #/embedding-services/BAAI-bge-m3
           file: ${{ inputs.DOCKERFILE_PATH }}
           push: true
           tags: ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }} # latest-${{ github.run_id }}
