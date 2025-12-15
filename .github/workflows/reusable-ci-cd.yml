@@ -300,7 +300,7 @@ jobs:
             cd ${{ github.event.repository.name }}
             
             cp .env .env.bak || true
-            mv -f .env.example .env
+            mv -f ../.env.example .env
 
             chmod +x /tmp/update-env.sh
             /tmp/update-env.sh .env \
