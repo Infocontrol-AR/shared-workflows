@@ -181,6 +181,7 @@ jobs:
           tags: ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }} # latest-${{ github.run_id }}
           
       - name: Run Trivy scan on private image
+        if: ${{ inputs.environment == 'development' }} 
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'image'
@@ -191,6 +192,7 @@ jobs:
           ignore-unfixed: true
           # vuln-type: 'os,library'
       - name: Upload Trivy report as artifact
+        if: ${{ inputs.environment == 'development' }} 
         uses: actions/upload-artifact@v4
         with:
           name: trivy-json-report
@@ -200,6 +202,7 @@ jobs:
         run: |
           pip install -r requirements.txt
       - name: Run tests and generate reports
+        if: ${{ inputs.environment == 'development' }} 
         run: |
           pytest tests/test_examples.py --junitxml=test-results.xml
           coverage run -m pytest tests/test_examples.py --junitxml=test-results.xml
@@ -208,6 +211,7 @@ jobs:
           bandit -r . -f json -o bandit-report.json || true
 
       - name: Upload XML files
+        if: ${{ inputs.environment == 'development' }} 
         uses: actions/upload-artifact@v4
         with:
           name: xml-reports
