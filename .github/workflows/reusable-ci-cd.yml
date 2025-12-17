@@ -273,7 +273,8 @@ jobs:
                 git init
                 
                 git remote add origin "$REPO_URL"
-                
+                git merge --abort
+
                 git pull
                 git checkout -b "${{ github.ref_name }}" origin/"${{ github.ref_name }}"
             fi
