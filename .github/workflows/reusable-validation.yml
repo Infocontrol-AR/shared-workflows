@@ -1,0 +1,32 @@
+name: Reusable Build and manage version
+
+on:
+  workflow_call:
+    inputs:
+ 
+      SRC_PATH:
+        description: 'Path to source code'
+        required: false
+        default: 'app/'
+        type: string
+
+
+jobs:
+
+  lint-and-type-check:
+    runs-on: [self-hosted]
+    environment: ${{ inputs.environment }}
+    # environment: ${{ github.ref_name == 'develop' && 'development' || github.ref_name == 'staging' && 'staging' || github.ref_name == 'qa' && 'qa'}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+            # Linting
+      - name: Lint code
+        run: |
+            pylint ${{ inputs.SRC_PATH }}
+            flake8 ${{ inputs.SRC_PATH }}
+            black --check ${{ inputs.SRC_PATH }}    
+
+      - name: Type check
+        run: mypy ${{ inputs.SRC_PATH }}

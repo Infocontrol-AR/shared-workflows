@@ -95,7 +95,15 @@ on:
       UNSTRUCTURED_API_URL:
         description: 'UNSTRUCTURED_API_URL'
         required: true
-
+      KAFKA_SCHEMA_REGISTRY_URL:
+        description: 'KAFKA_SCHEMA_REGISTRY_URL'
+        required: false
+      KAFKA_SCHEMA_REGISTRY_API_KEY:
+        description: 'KAFKA_SCHEMA_REGISTRY_API_KEY'  
+        required: false
+      KAFKA_SCHEMA_REGISTRY_API_SECRET:
+        description: 'KAFKA_SCHEMA_REGISTRY_API_SECRET'
+        required: false
 jobs:
 
   pre-build:
@@ -294,6 +302,10 @@ jobs:
             sed -i "s|DOCKER_REGISTRY=.*|DOCKER_REGISTRY=${{ inputs.DOCKER_REGISTRY }}|g" .env
             sed -i "s|DOCKER_IMAGE_NAME=.*|DOCKER_IMAGE_NAME=${{ inputs.DOCKER_IMAGE_NAME }}|g" .env
             sed -i "s|VERSION=.*|VERSION=${{ needs.pre-build.outputs.version }}|g" .env
+
+            perl -pi -e 's|^KAFKA_SCHEMA_REGISTRY_URL=.*|KAFKA_SCHEMA_REGISTRY_URL=${{ secrets.KAFKA_SCHEMA_REGISTRY_URL }}|g' .env
+            perl -pi -e 's|^KAFKA_SCHEMA_REGISTRY_API_KEY=.*|KAFKA_SCHEMA_REGISTRY_API_KEY=${{ secrets.KAFKA_SCHEMA_REGISTRY_API_KEY }}|g' .env
+            perl -pi -e 's|^KAFKA_SCHEMA_REGISTRY_API_SECRET=.*|KAFKA_SCHEMA_REGISTRY_API_SECRET=${{ secrets.KAFKA_SCHEMA_REGISTRY_API_SECRET }}|g' .env
 
             cat .env
             export $(cat .env | xargs)
