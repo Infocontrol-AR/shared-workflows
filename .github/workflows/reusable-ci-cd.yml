@@ -270,6 +270,9 @@ jobs:
       # Copy scripts to a temporary location accessible via SSH
       - name: Prepare deployment scripts
         run: |
+          ls -lah
+          pwd
+          
           cp shared-workflows/scripts/update-env.sh /tmp/update-env.sh
           cp ${{ inputs.DEPLOYMENT_SCRIPT_PATH }} /tmp/deployment.sh
           chmod +x /tmp/*.sh
