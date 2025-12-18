@@ -302,6 +302,7 @@ jobs:
             cp -rf ${{ github.event.repository.name }}/*  ${{ github.event.repository.name }}/
             cd ..
             rm -rf ${{ github.run_id }}
+            cd ${{ github.event.repository.name }}
             docker compose down --rmi all --volumes --remove-orphans
             docker compose up --build -d ${{ github.event.repository.name }}
             exit 0
