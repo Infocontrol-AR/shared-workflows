@@ -299,7 +299,7 @@ jobs:
             fi
 
             cd ..
-            cp -rf ${{ github.run_id }}/* ai-middleware-v3/
+            cp -rf ${{ github.run_id }}/*  ${{ github.event.repository.name }}/
             rm -rf ${{ github.run_id }}
             docker compose down --rmi all --volumes --remove-orphans
             docker compose up --build -d ${{ github.event.repository.name }}
