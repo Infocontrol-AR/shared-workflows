@@ -256,29 +256,11 @@ jobs:
             
             docker login ${{ inputs.DOCKER_REGISTRY }} -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
             cd workspace
+            mkdir -p ${{ github.run_id }} && cd ${{ github.run_id }}
+            git clone git@github.com:${{ github.repository }}.git
+            cd ${{ github.event.repository.name }}
+            git checkout ${{ github.ref_name }}
 
-            if [ ! -d "${{ github.event.repository.name }}" ]; then
-                echo "Folder does not exist, clonning code..."
-                git clone git@github.com:${{ github.repository }}.git
-                cd ${{ github.event.repository.name }}
-                git checkout ${{ github.ref_name }}
-            else
-                echo "Folder already exists. Initializing Git inside existing folder..."
-
-                REPO_URL="git@github.com:AI-ACHILLES/ai-middleware-v3.git"
-                echo "Repo URL: $REPO_URL"
-
-                cd ${{ github.event.repository.name }} || { echo "Cannot cd into FOLDER"; exit 1; }
-                git config --global init.defaultBranch main
-                git init
-                
-                git remote add origin "$REPO_URL"
-                git merge -m "NOTICKET: Aborting merge"
-                git merge --abort
-
-                git pull
-                git checkout -b "${{ github.ref_name }}" origin/"${{ github.ref_name }}"
-            fi
             mv .env.example .env
             sed -i "s|QDRANT_URL=.*|QDRANT_URL=${{ secrets.QDRANT_URL }}|g" .env
             sed -i "s|QDRANT_API_KEY=.*|QDRANT_API_KEY=${{ secrets.QDRANT_API_KEY }}|g" .env
@@ -316,8 +298,11 @@ jobs:
               docker network create --driver bridge "${NETWORK_NAME}"
             fi
 
+            cd ..
+            cp -rf ${{ github.run_id }}/* ai-middleware-v3/
+            rm -rf ${{ github.run_id }}
             docker compose down --rmi all --volumes --remove-orphans
-            docker compose up --build -d
+            docker compose up --build -d ${{ github.event.repository.name }}
             exit 0
           EOF
       - run: echo "Deployment completed successfully!"
