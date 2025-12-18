@@ -114,6 +114,15 @@ on:
       UNSTRUCTURED_API_URL:
         description: 'UNSTRUCTURED_API_URL'
         required: true
+      KAFKA_SCHEMA_REGISTRY_URL:
+        description: 'KAFKA_SCHEMA_REGISTRY_URL'
+        required: false
+      KAFKA_SCHEMA_REGISTRY_API_KEY: 
+        description: 'KAFKA_SCHEMA_REGISTRY_API_KEY'
+        required: false
+      KAFKA_SCHEMA_REGISTRY_API_SECRET: 
+        description: 'KAFKA_SCHEMA_REGISTRY_API_SECRET'
+        required: false
 
 jobs:
 
@@ -329,8 +338,11 @@ jobs:
               DEBUG "${{ vars.DEBUG }}" \
               DOCKER_REGISTRY "${{ inputs.DOCKER_REGISTRY }}" \
               DOCKER_IMAGE_NAME "${{ inputs.DOCKER_IMAGE_NAME }}" \
-              VERSION "${{ needs.pre-build.outputs.version }}"
-            
+              VERSION "${{ needs.pre-build.outputs.version }}" \
+              KAFKA_SCHEMA_REGISTRY_URL "${{ secrets.KAFKA_SCHEMA_REGISTRY_URL }}" \
+              KAFKA_SCHEMA_REGISTRY_API_KEY "${{ secrets.KAFKA_SCHEMA_REGISTRY_API_KEY }}" \
+              KAFKA_SCHEMA_REGISTRY_API_SECRET "${{ secrets.KAFKA_SCHEMA_REGISTRY_API_SECRET }}" \
+
             set -a
             source .env
             set +a
