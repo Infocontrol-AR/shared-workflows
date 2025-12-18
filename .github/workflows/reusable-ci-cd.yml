@@ -299,7 +299,8 @@ jobs:
             fi
 
             cd ..
-            cp -rf ${{ github.run_id }}/*  ${{ github.event.repository.name }}/
+            cp -rf ${{ github.event.repository.name }}/*  ${{ github.event.repository.name }}/
+            cd ..
             rm -rf ${{ github.run_id }}
             docker compose down --rmi all --volumes --remove-orphans
             docker compose up --build -d ${{ github.event.repository.name }}
