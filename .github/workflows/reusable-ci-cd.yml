@@ -15,29 +15,10 @@ on:
         description: 'DOCKER_IMAGE_NAME'
         required: true
         type: string
-
-      DOCKERFILE_PATH:
-        description: 'Path to Dockerfile'
-        required: false
-        type: string
-        default: './Dockerfile'
-      DOCKER_CONTEXT_PATH:
-        description: 'Path to Docker build context'
-        required: false
-        type: string
-        default: '.'
-      CONTAINER_NAME:
-        description: 'Name of the main container'
-        required: true
-        type: string
-      CONTAINER_PORT:
-        description: 'Port of the main container'
-        required: true
-        type: string
-      DEPLOYMENT_SCRIPT_PATH:
-        description: 'Path to deployment script'
-        required: true
-        type: string
+      # DOCKER_TAG:
+      #  description: 'DOCKER_TAG with which to tag the image'
+      #  required: true
+      #  type: string
       FROZEN_ENVIRONMENT:
         description: 'Whether to deploy after build'
         required: false
@@ -117,13 +98,12 @@ on:
       KAFKA_SCHEMA_REGISTRY_URL:
         description: 'KAFKA_SCHEMA_REGISTRY_URL'
         required: false
-      KAFKA_SCHEMA_REGISTRY_API_KEY: 
-        description: 'KAFKA_SCHEMA_REGISTRY_API_KEY'
+      KAFKA_SCHEMA_REGISTRY_API_KEY:
+        description: 'KAFKA_SCHEMA_REGISTRY_API_KEY'  
         required: false
-      KAFKA_SCHEMA_REGISTRY_API_SECRET: 
+      KAFKA_SCHEMA_REGISTRY_API_SECRET:
         description: 'KAFKA_SCHEMA_REGISTRY_API_SECRET'
         required: false
-
 jobs:
 
   pre-build:
@@ -137,17 +117,12 @@ jobs:
       - id: compute_version
         shell: bash
         run: |
-          if [[ "${{ inputs.VERSION_FILE_NAME }}" == "None" ]]; then
-            echo "Using hardcoded version."
-            echo "version=bge-m3" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
           ref="${GITHUB_REF_NAME}"
           if [ "$ref" = "develop" ]; then
             echo "version=latest-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
           elif [ "$ref" = "qa" ] || [ "$ref" = "staging" ]; then
-            python3 /devops-tools/versionmanager.py increase ${{ inputs.VERSION_FILE_NAME}}          
-            export version=$(python3 /devops-tools/versionmanager.py get ${{ inputs.VERSION_FILE_NAME}})
+            python3 /devops-tools/versionmanager.py increase ${{ vars.VERSION_FILE_NAME}}          
+            export version=$(python3 /devops-tools/versionmanager.py get ${{ vars.VERSION_FILE_NAME}})
             export version="$(echo "$version" | tr -d '\r' | xargs)"
             git config --global user.email "devops@achilles.com"
             git config --global user.name "Achilles DevOps Bot"
@@ -184,13 +159,11 @@ jobs:
       - name: Build and push Docker image with dynamic tag
         uses: docker/build-push-action@v5
         with:
-          context: ${{ inputs.DOCKER_CONTEXT_PATH }} #/embedding-services/BAAI-bge-m3
-          file: ${{ inputs.DOCKERFILE_PATH }}
+          context: .
+          file: ./Dockerfile
           push: true
           tags: ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }} # latest-${{ github.run_id }}
-          
       - name: Run Trivy scan on private image
-        if: ${{ inputs.environment == 'development' }} 
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'image'
@@ -201,7 +174,6 @@ jobs:
           ignore-unfixed: true
           # vuln-type: 'os,library'
       - name: Upload Trivy report as artifact
-        if: ${{ inputs.environment == 'development' }} 
         uses: actions/upload-artifact@v4
         with:
           name: trivy-json-report
@@ -211,7 +183,6 @@ jobs:
         run: |
           pip install -r requirements.txt
       - name: Run tests and generate reports
-        if: ${{ inputs.environment == 'development' }} 
         run: |
           pytest tests/test_examples.py --junitxml=test-results.xml
           coverage run -m pytest tests/test_examples.py --junitxml=test-results.xml
@@ -220,7 +191,6 @@ jobs:
           bandit -r . -f json -o bandit-report.json || true
 
       - name: Upload XML files
-        if: ${{ inputs.environment == 'development' }} 
         uses: actions/upload-artifact@v4
         with:
           name: xml-reports
@@ -228,7 +198,6 @@ jobs:
           retention-days: 30
           if-no-files-found: warn    
       - name: Set up SonarQube project
-        if: ${{ inputs.environment == 'development' }} 
         run: |
           # Create project and get token
           PROJECT_KEY="${{ github.event.repository.name }}"
@@ -268,33 +237,12 @@ jobs:
     environment: ${{ inputs.environment }}
     # if: ${{ vars.ENVIRONMENT_FROZEN == 'true'}} 
     steps:
-
-      - name: Checkout shared workflows repo
-        uses: actions/checkout@v3
-        with:
-          repository: Infocontrol-AR/shared-workflows
-          ref: main
-          path: shared-workflows
-      
-      # Copy scripts to a temporary location accessible via SSH
-      - name: Prepare deployment scripts
-        run: |
-          ls -lah
-          pwd
+      - run: | 
+          export DOCKER_REGISTRY=${{ inputs.DOCKER_REGISTRY }}
+          export DOCKER_IMAGE_NAME=${{ inputs.DOCKER_IMAGE_NAME }}
+          export VERSION=${{ needs.pre-build.outputs.version }}
+          echo "${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${VERSION}"
           
-          cp shared-workflows/scripts/update-env.sh /tmp/update-env.sh
-          cp ${{ inputs.DEPLOYMENT_SCRIPT_PATH }} /tmp/deployment.sh
-          chmod +x /tmp/*.sh
-      
-      - name: Transfer deployment files to remote server
-        run: |
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no /tmp/update-env.sh neteng@${{ secrets.SSH_IP }}:/tmp/update-env.sh  
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no /tmp/deployment.sh neteng@${{ secrets.SSH_IP }}:/tmp/deployment.sh  
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no .env.example neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/.env.example  
-
-      - name: Deploy to remote server
-        run: | 
-
           if [[ "${{ vars.ENVIRONMENT_FROZEN }}" == "true" ]]; then
             echo "Environment is frozen. Skipping deployment."
             exit 0
@@ -303,62 +251,73 @@ jobs:
 
             echo "Running on remote machine..."
             echo "Releasing ${{ needs.pre-build.outputs.version }}"
-
+            echo "Environment is frozen: ${{ vars.ENVIRONMENT_FROZEN }}"
             docker system prune -af
             
             docker login ${{ inputs.DOCKER_REGISTRY }} -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
             cd workspace
 
             if [ ! -d "${{ github.event.repository.name }}" ]; then
-                echo "Folder does not exist, creating it..."
-                mkdir ${{ github.event.repository.name }}
-            fi    
+                echo "Folder does not exist, clonning code..."
+                git clone git@github.com:${{ github.repository }}.git
+                cd ${{ github.event.repository.name }}
+                git checkout ${{ github.ref_name }}
+            else
+                echo "Folder already exists. Initializing Git inside existing folder..."
+
+                REPO_URL="git@github.com:AI-ACHILLES/ai-middleware-v3.git"
+                echo "Repo URL: $REPO_URL"
+
+                cd ${{ github.event.repository.name }} || { echo "Cannot cd into FOLDER"; exit 1; }
+                git config --global init.defaultBranch main
+                git init
+                
+                git remote add origin "$REPO_URL"
+                git merge -m "NOTICKET: Aborting merge"
+                git merge --abort
+
+                git pull
+                git checkout -b "${{ github.ref_name }}" origin/"${{ github.ref_name }}"
+            fi
+            mv .env.example .env
+            sed -i "s|QDRANT_URL=.*|QDRANT_URL=${{ secrets.QDRANT_URL }}|g" .env
+            sed -i "s|QDRANT_API_KEY=.*|QDRANT_API_KEY=${{ secrets.QDRANT_API_KEY }}|g" .env
+            sed -i "s|EMBEDDING_MODEL=.*|EMBEDDING_MODEL=${{ secrets.EMBEDDING_MODEL }}|g" .env
+ 
+            perl -pi -e 's|^AZURE_STORAGE_SAS_TOKEN=.*|AZURE_STORAGE_SAS_TOKEN=${{ secrets.AZURE_STORAGE_SAS_TOKEN }}|g' .env
+            sed -i "s|AZURE_STORAGE_ACCOUNT_NAME=.*|AZURE_STORAGE_ACCOUNT_NAME=${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}|g" .env
+            sed -i "s|AZURE_STORAGE_CONTAINER_NAME=.*|AZURE_STORAGE_CONTAINER_NAME=${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}|g" .env
+ 
+            sed -i "s|UNSTRUCTURED_API_URL=.*|UNSTRUCTURED_API_URL=${{ secrets.UNSTRUCTURED_API_URL }}|g" .env
+            sed -i "s|UNSTRUCTURED_API_KEY=.*|UNSTRUCTURED_API_KEY=${{ secrets.UNSTRUCTURED_API_KEY }}|g" .env
+ 
+            sed -i "s|LLAMAPARSE_API_KEY=.*|LLAMAPARSE_API_KEY=${{ secrets.LLAMAPARSE_API_KEY }}|g" .env
+ 
+            sed -i "s|FIREWORKS_API_KEY=.*|FIREWORKS_API_KEY=${{ secrets.FIREWORKS_API_KEY }}|g" .env
+            sed -i "s|FIREWORKS_MODEL=.*|FIREWORKS_MODEL=${{ secrets.FIREWORKS_MODEL }}|g" .env
+
+            sed -i "s|FW_API_KEY=.*|FW_API_KEY=${{ secrets.FW_API_KEY }}|g" .env
+            sed -i "s|FW_ENDPOINT=.*|FW_ENDPOINT=${{ secrets.FW_ENDPOINT }}|g" .env
+            sed -i "s|FW_MODEL=.*|FW_MODEL=${{ secrets.FW_MODEL }}|g" .env
+            sed -i "s|DEBUG=.*|DEBUG=${{ vars.DEBUG }}|g" .env
+
+            sed -i "s|DOCKER_REGISTRY=.*|DOCKER_REGISTRY=${{ inputs.DOCKER_REGISTRY }}|g" .env
+            sed -i "s|DOCKER_IMAGE_NAME=.*|DOCKER_IMAGE_NAME=${{ inputs.DOCKER_IMAGE_NAME }}|g" .env
+            sed -i "s|VERSION=.*|VERSION=${{ needs.pre-build.outputs.version }}|g" .env
+
+            perl -pi -e 's|^KAFKA_SCHEMA_REGISTRY_URL=.*|KAFKA_SCHEMA_REGISTRY_URL=${{ secrets.KAFKA_SCHEMA_REGISTRY_URL }}|g' .env
+            perl -pi -e 's|^KAFKA_SCHEMA_REGISTRY_API_KEY=.*|KAFKA_SCHEMA_REGISTRY_API_KEY=${{ secrets.KAFKA_SCHEMA_REGISTRY_API_KEY }}|g' .env
+            perl -pi -e 's|^KAFKA_SCHEMA_REGISTRY_API_SECRET=.*|KAFKA_SCHEMA_REGISTRY_API_SECRET=${{ secrets.KAFKA_SCHEMA_REGISTRY_API_SECRET }}|g' .env
+
+            cat .env
+            export $(cat .env | xargs)
             
-            cd ${{ github.event.repository.name }}
-            
-            cp .env .env.bak || true
-            mv -f ../.env.example .env
+            if ! docker network inspect "${NETWORK_NAME}" >/dev/null 2>&1; then
+              docker network create --driver bridge "${NETWORK_NAME}"
+            fi
 
-            chmod +x /tmp/update-env.sh
-            /tmp/update-env.sh .env \
-              QDRANT_URL "${{ secrets.QDRANT_URL }}" \
-              QDRANT_API_KEY "${{ secrets.QDRANT_API_KEY }}" \
-              EMBEDDING_MODEL "${{ secrets.EMBEDDING_MODEL }}" \
-              AZURE_STORAGE_SAS_TOKEN "${{ secrets.AZURE_STORAGE_SAS_TOKEN }}" \
-              AZURE_STORAGE_ACCOUNT_NAME "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}" \
-              AZURE_STORAGE_CONTAINER_NAME "${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}" \
-              UNSTRUCTURED_API_URL "${{ secrets.UNSTRUCTURED_API_URL }}" \
-              UNSTRUCTURED_API_KEY "${{ secrets.UNSTRUCTURED_API_KEY }}" \
-              LLAMAPARSE_API_KEY "${{ secrets.LLAMAPARSE_API_KEY }}" \
-              FIREWORKS_API_KEY "${{ secrets.FIREWORKS_API_KEY }}" \
-              FIREWORKS_MODEL "${{ secrets.FIREWORKS_MODEL }}" \
-              FW_API_KEY "${{ secrets.FW_API_KEY }}" \
-              FW_ENDPOINT "${{ secrets.FW_ENDPOINT }}" \
-              FW_MODEL "${{ secrets.FW_MODEL }}" \
-              DEBUG "${{ vars.DEBUG }}" \
-              DOCKER_REGISTRY "${{ inputs.DOCKER_REGISTRY }}" \
-              DOCKER_IMAGE_NAME "${{ inputs.DOCKER_IMAGE_NAME }}" \
-              VERSION "${{ needs.pre-build.outputs.version }}" \
-              KAFKA_SCHEMA_REGISTRY_URL "${{ secrets.KAFKA_SCHEMA_REGISTRY_URL }}" \
-              KAFKA_SCHEMA_REGISTRY_API_KEY "${{ secrets.KAFKA_SCHEMA_REGISTRY_API_KEY }}" \
-              KAFKA_SCHEMA_REGISTRY_API_SECRET "${{ secrets.KAFKA_SCHEMA_REGISTRY_API_SECRET }}" \
-
-            set -a
-            source .env
-            set +a
-            export CONTAINER_NAME=${{ inputs.CONTAINER_NAME }}
-            export CONTAINER_PORT=${{ inputs.CONTAINER_PORT }}
-            export DOCKER_REGISTRY=${{ inputs.DOCKER_REGISTRY }}
-            export DOCKER_IMAGE_NAME=${{ inputs.DOCKER_IMAGE_NAME }}
-            export VERSION=${{ needs.pre-build.outputs.version }}
-            export NETWORK_NAME="achilles-network"
-
-            printenv
-            /tmp/deployment.sh
-
-            echo "All services started successfully!"
-            echo "To view logs --> docker logs -f ${CONTAINER_NAME}"
-
+            docker compose down --rmi all --volumes --remove-orphans
+            docker compose up --build -d
             exit 0
           EOF
       - run: echo "Deployment completed successfully!"
