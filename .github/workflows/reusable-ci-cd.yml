@@ -312,10 +312,15 @@ jobs:
             fi
 
             cd ~/workspace
-            rm -rf ${{ github.event.repository.name }}
+            # Borrar viejo con permisos de Docker
+            docker run --rm -v $(pwd):/workspace alpine rm -rf /workspace/${{ github.event.repository.name }}
+            # Mover el nuevo
             mv ${{ github.run_id }}/${{ github.event.repository.name }} .
+            # Limpiar temporal
             rm -rf ${{ github.run_id }}
+            # Entrar
             cd ${{ github.event.repository.name }}
+            # Deploy
             docker compose down --rmi all --volumes --remove-orphans
             docker compose up -d
             exit 0
