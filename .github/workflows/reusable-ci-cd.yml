@@ -104,6 +104,16 @@ on:
       KAFKA_SCHEMA_REGISTRY_API_SECRET:
         description: 'KAFKA_SCHEMA_REGISTRY_API_SECRET'
         required: false
+      KAFKA_BOOTSTRAP:
+        description: 'KAFKA_BOOTSTRAP'
+        required: false
+      KAFKA_SASL_USERNAME:
+        description: 'KAFKA_SASL_USERNAME'
+        required: false
+      KAFKA_SASL_PASSWORD:
+        description: 'KAFKA_SASL_PASSWORD'
+        required: false
+        
 jobs:
 
   pre-build:
@@ -290,6 +300,9 @@ jobs:
             perl -pi -e 's|^KAFKA_SCHEMA_REGISTRY_URL=.*|KAFKA_SCHEMA_REGISTRY_URL=${{ secrets.KAFKA_SCHEMA_REGISTRY_URL }}|g' .env
             perl -pi -e 's|^KAFKA_SCHEMA_REGISTRY_API_KEY=.*|KAFKA_SCHEMA_REGISTRY_API_KEY=${{ secrets.KAFKA_SCHEMA_REGISTRY_API_KEY }}|g' .env
             perl -pi -e 's|^KAFKA_SCHEMA_REGISTRY_API_SECRET=.*|KAFKA_SCHEMA_REGISTRY_API_SECRET=${{ secrets.KAFKA_SCHEMA_REGISTRY_API_SECRET }}|g' .env
+            sed -i "s|KAFKA_BOOTSTRAP=.*|KAFKA_BOOTSTRAP=${{ secrets.KAFKA_BOOTSTRAP }}|g" .env
+            sed -i "s|KAFKA_SASL_USERNAME=.*|KAFKA_SASL_USERNAME=${{ secrets.KAFKA_SASL_USERNAME }}|g" .env
+            sed -i "s|KAFKA_SASL_PASSWORD=.*|KAFKA_SASL_PASSWORD=${{ secrets.KAFKA_SASL_PASSWORD }}|g" .env
 
             cat .env
             export $(cat .env | xargs)
