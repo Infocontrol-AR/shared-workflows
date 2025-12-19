@@ -311,13 +311,13 @@ jobs:
               docker network create --driver bridge "${NETWORK_NAME}"
             fi
 
-            cd ..
-            cp -rf ${{ github.event.repository.name }}/*  ${{ github.event.repository.name }}/
-            cd ..
+            cd ~/workspace
+            rm -rf ${{ github.event.repository.name }}
+            mv ${{ github.run_id }}/${{ github.event.repository.name }} .
             rm -rf ${{ github.run_id }}
             cd ${{ github.event.repository.name }}
             docker compose down --rmi all --volumes --remove-orphans
-            docker compose up --build -d 
+            docker compose up -d
             exit 0
           EOF
       - run: echo "Deployment completed successfully!"
