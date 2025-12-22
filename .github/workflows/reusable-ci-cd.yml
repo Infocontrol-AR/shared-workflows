@@ -123,6 +123,15 @@ on:
       KAFKA_SCHEMA_REGISTRY_API_SECRET: 
         description: 'KAFKA_SCHEMA_REGISTRY_API_SECRET'
         required: false
+      KAFKA_BOOTSTRAP:
+        description: 'KAFKA_BOOTSTRAP'
+        required: false
+      KAFKA_SASL_PASSWORD:
+        description: 'KAFKA_SASL_PASSWORD'
+        required: false
+      KAFKA_SASL_USERNAME:
+        description: 'KAFKA_SASL_USERNAME'
+        required: false
 
 jobs:
 
@@ -342,6 +351,9 @@ jobs:
               KAFKA_SCHEMA_REGISTRY_URL "${{ secrets.KAFKA_SCHEMA_REGISTRY_URL }}" \
               KAFKA_SCHEMA_REGISTRY_API_KEY "${{ secrets.KAFKA_SCHEMA_REGISTRY_API_KEY }}" \
               KAFKA_SCHEMA_REGISTRY_API_SECRET "${{ secrets.KAFKA_SCHEMA_REGISTRY_API_SECRET }}" \
+              KAFKA_BOOTSTRAP "${{ secrets.KAFKA_BOOTSTRAP }}" \
+              KAFKA_SASL_USERNAME "${{ secrets.KAFKA_SASL_USERNAME }}" \
+              KAFKA_SASL_PASSWORD "${{ secrets.KAFKA_SASL_PASSWORD }}"
 
             set -a
             source .env
