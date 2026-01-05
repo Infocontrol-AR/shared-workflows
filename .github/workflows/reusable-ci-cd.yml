@@ -299,7 +299,7 @@ jobs:
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no /tmp/run-smoke-tests.sh neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/run-smoke-tests.sh
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no /tmp/deployment.sh neteng@${{ secrets.SSH_IP }}:/tmp/deployment.sh  
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no .env.example neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/.env.example  
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -o StrictHostKeyChecking=no tests/smoke/. neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/${{ github.event.repository.name }}/tests/smoke/
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -o StrictHostKeyChecking=no tests/smoke/ neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/${{ github.event.repository.name }}/tests/smoke/
 
       - name: Deploy to remote server
         run: | 
