@@ -362,6 +362,7 @@ jobs:
             export DOCKER_IMAGE_NAME=${{ inputs.DOCKER_IMAGE_NAME }}
             export VERSION=${{ needs.pre-build.outputs.version }}
             export NETWORK_NAME="achilles-network"
+            export SSH_IP=${{ secrets.SSH_IP }}
 
             printenv
             /tmp/deployment.sh
