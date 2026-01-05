@@ -17,12 +17,12 @@ test_rag_service() {
 
 test_vectorizer() {
   echo "Testing Vectorizer"
-  python3 vectorizer_smoke_tests.py "$VECTORIZER_BASE_URL"
+  python3 tests/smoke/vectorizer_smoke_tests.py "$VECTORIZER_BASE_URL"
 }
 
 test_middleware() {
   echo "Testing Middleware"
-  python3 middleware_smoke_tests.py "$MIDDLEWARE_BASE_URL"
+  python3 tests/smoke/middleware_smoke_tests.py "$MIDDLEWARE_BASE_URL"
 }
 
 case "$REPO_NAME" in
