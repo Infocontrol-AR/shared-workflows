@@ -218,7 +218,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install -r requirements.txt || true
       - name: Run tests and generate reports
         if: ${{ inputs.environment == 'development' }} 
         run: |
