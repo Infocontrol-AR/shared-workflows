@@ -5,6 +5,7 @@ set -euo pipefail
 
 REPO_NAME="$1"
 
+MIDDLEWARE_BASE_URL="http://${SSH_IP}:${MIDDLEWARE_PORT:-8000}"
 CORE_BASE_URL="http://${SSH_IP}:${RAG_SERVICE_PORT:-8040}"
 RAG_BASE_URL="http://${SSH_IP}:${RAG_SERVICE_PORT:-8040}"
 VECTORIZER_BASE_URL="http://${SSH_IP}:${VECTORIZER_PORT:-8020}"
@@ -21,7 +22,7 @@ test_vectorizer() {
 
 test_middleware() {
   echo "Testing Middleware"
-  echo "..."
+  python3 middleware_smoke_tests.py "$MIDDLEWARE_BASE_URL"
 }
 
 case "$REPO_NAME" in
