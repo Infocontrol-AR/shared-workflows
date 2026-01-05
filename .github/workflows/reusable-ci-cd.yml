@@ -282,7 +282,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: Infocontrol-AR/shared-workflows
-          ref: main
+          ref: develop
           path: shared-workflows
       
       # Copy scripts to a temporary location accessible via SSH
