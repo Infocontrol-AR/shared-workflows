@@ -11,7 +11,7 @@ VECTORIZER_BASE_URL="http://${SSH_IP}:${VECTORIZER_PORT:-8020}"
 
 test_rag_service() {
   echo "Testing RAG Service"
-  python3 ../tests/smoke/rag_smoke_tests.py "$CORE_BASE_URL" # --core-base "$CORE_BASE_URL" --rag-base "$RAG_BASE_URL"
+  python3 tests/smoke/rag_smoke_tests.py "$CORE_BASE_URL" # --core-base "$CORE_BASE_URL" --rag-base "$RAG_BASE_URL"
 }
 
 test_vectorizer() {
