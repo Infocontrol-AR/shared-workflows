@@ -288,9 +288,6 @@ jobs:
       # Copy scripts to a temporary location accessible via SSH
       - name: Prepare deployment scripts
         run: |
-          ls -lah
-          pwd
-          
           cp shared-workflows/scripts/update-env.sh /tmp/update-env.sh
           cp ${{ inputs.DEPLOYMENT_SCRIPT_PATH }} /tmp/deployment.sh
           chmod +x /tmp/*.sh
@@ -300,6 +297,7 @@ jobs:
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no /tmp/update-env.sh neteng@${{ secrets.SSH_IP }}:/tmp/update-env.sh  
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no /tmp/deployment.sh neteng@${{ secrets.SSH_IP }}:/tmp/deployment.sh  
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no .env.example neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/.env.example  
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -o StrictHostKeyChecking=no tests/smoke/* neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/ || true
 
       - name: Deploy to remote server
         run: | 
@@ -370,6 +368,8 @@ jobs:
 
             echo "All services started successfully!"
             echo "To view logs --> docker logs -f ${CONTAINER_NAME}"
+            echo "Running smoke tests..."
+            /home/neteng/workspace/run-smoke-tests.sh ${{ github.event.repository.name }}
 
             exit 0
           EOF
