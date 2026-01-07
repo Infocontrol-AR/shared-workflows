@@ -629,3 +629,94 @@ jobs:
           name: container-logs-${{ needs.pre-build.outputs.version }}
           path: container-logs.txt
           retention-days: 7
+
+  rollback:
+    needs: [health-check, pre-build, deploy]
+    if: |
+      always() &&
+      inputs.rollback_enabled == true &&
+      (needs.deploy.result == 'failure' || needs.health-check.outputs.health_status == 'unhealthy') &&
+      needs.pre-build.outputs.previous_version != 'none'
+    runs-on: [self-hosted]
+    environment: ${{ inputs.environment }}
+    
+    steps:
+      - name: Rollback to previous version
+        run: |
+          echo "🔄 Initiating rollback to version: ${{ needs.pre-build.outputs.previous_version }}"
+          
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -tt -o StrictHostKeyChecking=no \
+            neteng@${{ secrets.SSH_IP }} << 'ENDSSH'
+            
+          set -e
+          
+          echo "=== Rollback started ==="
+          
+          cd /home/neteng/workspace/${{ github.event.repository.name }}
+          
+          # Stop current container
+          docker stop ${{ inputs.CONTAINER_NAME }} || true
+          docker rm ${{ inputs.CONTAINER_NAME }} || true
+          
+          # Restore previous .env if available
+          if [ -f .env.bak.* ]; then
+            LATEST_BACKUP=$(ls -t .env.bak.* | head -1)
+            cp "$LATEST_BACKUP" .env
+            echo "Restored .env from $LATEST_BACKUP"
+          fi
+          
+          # Restore previous version marker
+          if [ -f .deployed_version.backup ]; then
+            cp .deployed_version.backup .deployed_version
+          fi
+          
+          # Load environment
+          set -a
+          source .env
+          set +a
+          
+          # Set rollback version
+          export VERSION="${{ needs.pre-build.outputs.previous_version }}"
+          export CONTAINER_NAME="${{ inputs.CONTAINER_NAME }}"
+          export CONTAINER_PORT="${{ inputs.CONTAINER_PORT }}"
+          export DOCKER_REGISTRY="${{ inputs.DOCKER_REGISTRY }}"
+          export DOCKER_IMAGE_NAME="${{ inputs.DOCKER_IMAGE_NAME }}"
+          export NETWORK_NAME="achilles-middleware-network"
+          
+          echo "Pulling previous image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${VERSION}"
+          docker pull ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${VERSION}
+          
+          # Start container with previous version
+          docker run -d \
+            --name ${CONTAINER_NAME} \
+            --network ${NETWORK_NAME} \
+            -p ${CONTAINER_PORT}:${CONTAINER_PORT} \
+            --env-file .env \
+            --restart unless-stopped \
+            ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${VERSION}
+          
+          echo "=== Rollback completed ==="
+          echo "Rolled back to version: ${VERSION}"
+          
+          ENDSSH
+          
+      - name: Verify rollback health
+        run: |
+          echo "Waiting 30 seconds for rolled back container..."
+          sleep 30
+          
+          for i in {1..10}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              "http://${{ secrets.SSH_IP }}:${{ inputs.CONTAINER_PORT }}${{ inputs.health_check_endpoint }}" || echo "000")
+            
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Rollback successful - service is healthy"
+              exit 0
+            fi
+            
+            echo "Attempt $i: HTTP $HTTP_CODE"
+            sleep 5
+          done
+          
+          echo "::error::Rollback verification failed"
+          exit 1
