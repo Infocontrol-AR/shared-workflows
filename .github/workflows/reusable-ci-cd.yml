@@ -522,11 +522,11 @@ jobs:
               KAFKA_BOOTSTRAP "${{ secrets.KAFKA_BOOTSTRAP }}" \
               KAFKA_SASL_USERNAME "${{ secrets.KAFKA_SASL_USERNAME }}" \
               KAFKA_SASL_PASSWORD "${{ secrets.KAFKA_SASL_PASSWORD }}"
-            echo "Exit code so far 1: $?
+            echo "Exit code so far 1: $?"
             set -a
             source .env
             set +a
-            echo "Exit code so far 2: $?
+            echo "Exit code so far 2: $?"
             export CONTAINER_NAME=${{ inputs.CONTAINER_NAME }}
             export CONTAINER_PORT=${{ inputs.CONTAINER_PORT }}
             export DOCKER_REGISTRY=${{ inputs.DOCKER_REGISTRY }}
@@ -538,7 +538,7 @@ jobs:
             # Run deployment script
             echo "Running deployment script..."
             /tmp/deployment.sh
-            
+            echo "Exit code so far 3: $?"
             echo "=== Deployment completed successfully ==="
             echo "Container: ${CONTAINER_NAME}"
 
@@ -546,7 +546,7 @@ jobs:
             echo "To view logs --> docker logs -f ${CONTAINER_NAME}"
             # echo "Running smoke tests..."
             # /home/neteng/workspace/run-smoke-tests.sh ${{ github.event.repository.name }}
-
+            echo "Exit code so far 4: $?"
             exit 0
           EOF
 
