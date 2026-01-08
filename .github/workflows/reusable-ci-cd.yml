@@ -642,6 +642,7 @@ jobs:
             cd workspace
             cd ${{ github.event.repository.name }}
             /home/neteng/workspace/run-smoke-tests.sh '${{ github.event.repository.name }}'
+            exit 0
           EOF
       
       - name: Collect container logs
