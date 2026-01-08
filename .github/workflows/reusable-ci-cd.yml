@@ -462,7 +462,7 @@ jobs:
           fi
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
 
-            set -e
+            # set -e
             
             echo "=== Deployment started ==="
             echo "Version: ${{ needs.pre-build.outputs.version }}"
