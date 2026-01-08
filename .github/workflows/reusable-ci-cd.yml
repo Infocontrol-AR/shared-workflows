@@ -496,6 +496,7 @@ jobs:
             cp ../.env.example .env
 
             chmod +x /tmp/update-env.sh
+            cat .env
             /tmp/update-env.sh .env \
               QDRANT_URL "${{ secrets.QDRANT_URL }}" \
               QDRANT_API_KEY "${{ secrets.QDRANT_API_KEY }}" \
