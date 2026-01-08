@@ -455,7 +455,7 @@ jobs:
         env:
           VERSION: ${{ needs.pre-build.outputs.version }}
         run: | 
-          DEPLOYMENT_STATUS="failed"
+          DEPLOYMENT_STATUS="success"
           if [[ "${{ vars.ENVIRONMENT_FROZEN }}" == "true" ]]; then
             echo "Environment is frozen. Skipping deployment."
             exit 0
@@ -540,6 +540,7 @@ jobs:
             echo "Container: ${CONTAINER_NAME}"
 
             echo "All services started successfully!"
+
             echo "To view logs --> docker logs -f ${CONTAINER_NAME}"
             # echo "Running smoke tests..."
             # /home/neteng/workspace/run-smoke-tests.sh ${{ github.event.repository.name }}
