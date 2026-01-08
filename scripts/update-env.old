@@ -12,33 +12,35 @@ if [ ! -f "$ENV_FILE" ]; then
     exit 1
 fi
 
+# Check if perl is available
+if ! command -v perl &> /dev/null; then
+    echo "Error: perl is not installed. Please install it first:"
+    echo "  sudo apt-get install perl"
+    exit 1
+fi
+
 echo "Updating environment file: $ENV_FILE"
 
 # Shift to get key-value pairs
 shift
-
-# Function to escape special characters for sed
-escape_for_sed() {
-    # Escape forward slashes, backslashes, ampersands, and newlines
-    echo "$1" | sed -e 's/[\/&]/\\&/g'
-}
 
 # Function to update or add a key-value pair in .env file
 update_env_var() {
     local key="$1"
     local value="$2"
     
-    # Escape the value for sed
-    local escaped_value=$(escape_for_sed "$value")
+    # Escape special characters for perl regex
+    # We use quotemeta in perl to handle all special chars automatically
+    local escaped_key=$(printf '%s' "$key" | perl -pe 's/([\\|.*+?{}()[\]^$])/\\$1/g')
     
-    # Check if key exists in the file
     if grep -q "^${key}=" "$ENV_FILE"; then
-        # Key exists, update it using sed
-        # Use | as delimiter to avoid conflicts with URLs containing /
-        sed -i "s|^${key}=.*|${key}=${escaped_value}|" "$ENV_FILE"
+        # Key exists, update it using perl
+        # Use \Q...\E to quote metacharacters in the replacement value
+        perl -i -pe "s/^${escaped_key}=.*/\Q${key}\E=\Q${value}\E/" "$ENV_FILE"
         echo "✓ Updated: $key"
     else
         # Key doesn't exist, append it
+        # No escaping needed when appending
         echo "${key}=${value}" >> "$ENV_FILE"
         echo "✓ Added: $key"
     fi
@@ -54,12 +56,7 @@ while [ $# -gt 0 ]; do
     key="$1"
     value="$2"
     
-    # Skip empty values
-    if [ -n "$value" ]; then
-        update_env_var "$key" "$value"
-    else
-        echo "⚠ Skipped (empty value): $key"
-    fi
+    update_env_var "$key" "$value"
     
     shift 2
 done
