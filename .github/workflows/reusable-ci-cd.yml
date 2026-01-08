@@ -283,11 +283,12 @@ jobs:
           severity: 'CRITICAL,HIGH'
           exit-code: '0'
           ignore-unfixed: true
-      - name: Upload Trivy results to GitHub Security
-        if: ${{ inputs.enable_tests }}
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: 'trivy-results.sarif'
+#      Not available in our current subscription
+#      - name: Upload Trivy results to GitHub Security
+#        if: ${{ inputs.enable_tests }}
+#        uses: github/codeql-action/upload-sarif@v4
+#        with:
+#          sarif_file: 'trivy-results.sarif'
       - name: Upload Trivy report as artifact
         if: ${{ inputs.enable_tests }}
         uses: actions/upload-artifact@v4
