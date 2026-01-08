@@ -59,7 +59,23 @@ on:
         description: 'Enable tests and quality checks'
         required: false
         type: boolean
-        default: true        
+        default: true
+      health_check_endpoint:
+        description: 'HTTP endpoint for health checks (e.g., /health)'
+        required: false
+        type: string
+        default: '/health'
+      health_check_timeout:
+        description: 'Health check timeout in seconds'
+        required: false
+        type: number
+        default: 300
+      health_check_interval:
+        description: 'Health check interval in seconds'
+        required: false
+        type: number
+        default: 10
+
     secrets:
 
       SSH_PASSWORD:
