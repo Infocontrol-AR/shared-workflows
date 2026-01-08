@@ -546,7 +546,7 @@ jobs:
             # /home/neteng/workspace/run-smoke-tests.sh ${{ github.event.repository.name }}
             exit 0
           EOF
-
+          echo "Exit code so far: $?"
           echo "status=$DEPLOYMENT_STATUS" >> "$GITHUB_OUTPUT"
           
           if [ "$DEPLOYMENT_STATUS" = "failed" ]; then
