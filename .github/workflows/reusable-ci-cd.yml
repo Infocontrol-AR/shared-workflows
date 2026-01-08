@@ -638,12 +638,11 @@ jobs:
         if: steps.health_check.outputs.status == 'healthy'
         run: |
           echo "Running smoke tests..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no \
-            neteng@${{ secrets.SSH_IP }} \
-            "/home/neteng/workspace/run-smoke-tests.sh '${{ github.event.repository.name }}'" || {
-              echo "::warning::Smoke tests failed"
-              exit 1
-            }
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
+            cd workspace
+            cd ${{ github.event.repository.name }}
+            home/neteng/workspace/run-smoke-tests.sh '${{ github.event.repository.name }}'
+          EOF
       
       - name: Collect container logs
         if: always()
