@@ -641,7 +641,7 @@ jobs:
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
             cd workspace
             cd ${{ github.event.repository.name }}
-            home/neteng/workspace/run-smoke-tests.sh '${{ github.event.repository.name }}'
+            /home/neteng/workspace/run-smoke-tests.sh '${{ github.event.repository.name }}'
           EOF
       
       - name: Collect container logs
