@@ -243,6 +243,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+      actions: read
+      security-events: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
