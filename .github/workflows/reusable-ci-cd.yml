@@ -455,7 +455,7 @@ jobs:
         env:
           VERSION: ${{ needs.pre-build.outputs.version }}
         run: | 
-          DEPLOYMENT_STATUS="success"
+          DEPLOYMENT_STATUS="failed"
           if [[ "${{ vars.ENVIRONMENT_FROZEN }}" == "true" ]]; then
             echo "Environment is frozen. Skipping deployment."
             exit 0
@@ -546,7 +546,18 @@ jobs:
             # /home/neteng/workspace/run-smoke-tests.sh ${{ github.event.repository.name }}
             exit 0
           EOF
-          echo "Exit code so far: $?"
+
+          # Capture the exit code of the previous command immediately
+          rc=$?
+          echo "Exit code so far: $rc"
+
+          # Determine deployment status from the exit code
+          if [ "$rc" -eq 0 ]; then
+            DEPLOYMENT_STATUS="success"
+          else
+            DEPLOYMENT_STATUS="failed"
+          fi
+
           echo "status=$DEPLOYMENT_STATUS" >> "$GITHUB_OUTPUT"
           
           if [ "$DEPLOYMENT_STATUS" = "failed" ]; then
