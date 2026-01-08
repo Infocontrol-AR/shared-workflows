@@ -17,29 +17,32 @@ echo "Updating environment file: $ENV_FILE"
 # Shift to get key-value pairs
 shift
 
-# Function to escape special characters for sed
-escape_for_sed() {
-    # Escape forward slashes, backslashes, ampersands, and newlines
-    echo "$1" | sed -e 's/[\/&]/\\&/g'
-}
-
 # Function to update or add a key-value pair in .env file
 update_env_var() {
     local key="$1"
     local value="$2"
     
-    # Escape the value for sed
-    local escaped_value=$(escape_for_sed "$value")
-    
     # Check if key exists in the file
     if grep -q "^${key}=" "$ENV_FILE"; then
-        # Key exists, update it using sed
-        # Use | as delimiter to avoid conflicts with URLs containing /
-        sed -i "s|^${key}=.*|${key}=${escaped_value}|" "$ENV_FILE"
+        # Key exists, update it
+        # Use a temporary file for safety
+        local temp_file="${ENV_FILE}.tmp"
+        
+        # Read the file line by line and update the matching key
+        while IFS= read -r line; do
+            if [[ "$line" =~ ^${key}= ]]; then
+                echo "${key}=\"${value}\""
+            else
+                echo "$line"
+            fi
+        done < "$ENV_FILE" > "$temp_file"
+        
+        # Replace original file with updated content
+        mv "$temp_file" "$ENV_FILE"
         echo "✓ Updated: $key"
     else
         # Key doesn't exist, append it
-        echo "${key}=${value}" >> "$ENV_FILE"
+        echo "${key}=\"${value}\"" >> "$ENV_FILE"
         echo "✓ Added: $key"
     fi
 }
