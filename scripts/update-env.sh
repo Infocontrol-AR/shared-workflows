@@ -31,7 +31,8 @@ update_env_var() {
         # Read the file line by line and update the matching key
         while IFS= read -r line; do
             if [[ "$line" =~ ^${key}= ]]; then
-                echo "${key}=\"${value}\""
+                # echo "${key}=\"${value}\""
+                echo "${key}=${value}"
             else
                 echo "$line"
             fi
@@ -43,7 +44,8 @@ update_env_var() {
     else
         # Key doesn't exist, append it
         echo "" >> "$ENV_FILE"  # Ensure there's a newline before appending
-        echo "${key}=\"${value}\"" >> "$ENV_FILE"
+        # echo "${key}=\"${value}\"" >> "$ENV_FILE"
+        echo "${key}=${value}" >> "$ENV_FILE"
         echo "✓ Added: $key"
     fi
 }
