@@ -42,7 +42,8 @@ update_env_var() {
         echo "✓ Updated: $key"
     else
         # Key doesn't exist, append it
-        echo "\n${key}=\"${value}\"" >> "$ENV_FILE"
+        echo "" >> "$ENV_FILE"  # Ensure there's a newline before appending
+        echo "${key}=\"${value}\"" >> "$ENV_FILE"
         echo "✓ Added: $key"
     fi
 }
