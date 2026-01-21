@@ -217,6 +217,8 @@ jobs:
         run: |
           ls -lah
           pwd
+          Docker inicio de sesión ${{ entradas. DOCKER_REGISTRY }} -u ${{ secretos. DOCKER_USERNAME }} -p ${{ secretos. DOCKER_PASSWORD }}
+          Docker build -t ${{ entradas. DOCKER_REGISTRY }}/infocontrol/ai-middleware-v3:1.1.200 .
           docker build
           if [[ "${{ inputs.VERSION_FILE_NAME }}" == "None" ]]; then
             echo "Using hardcoded version."
