@@ -263,12 +263,12 @@ jobs:
       security-events: write
 
     steps:
-      - name: Checkout caller repository
+      - name: Checkout repository at version tag
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           repository: ${{ github.event.repository.full_name }}
-          ref: ${{ github.ref }}
+          ref: ${{ needs.pre-build.outputs.version }}
 
       - run: |
           echo "Repo: ${{ github.event.repository.full_name }}"
