@@ -219,7 +219,7 @@ jobs:
           pwd
           docker login ${{ inputs.DOCKER_REGISTRY }} -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
           docker build -t ${{ inputs.DOCKER_REGISTRY }}/infocontrol/ai-middleware-v3:1.1.200 .
-          
+          docker push ${{ inputs.DOCKER_REGISTRY }}/infocontrol/ai-middleware-v3:1.1.200
           if [[ "${{ inputs.VERSION_FILE_NAME }}" == "None" ]]; then
             echo "Using hardcoded version."
             echo "version=bge-m3" >> "$GITHUB_OUTPUT"
