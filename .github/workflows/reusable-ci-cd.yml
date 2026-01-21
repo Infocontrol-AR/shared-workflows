@@ -276,7 +276,6 @@ jobs:
           ls -R .
           cat app/_version.py
 
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -290,13 +289,13 @@ jobs:
       - name: Build and push Docker image with dynamic tag
         uses: docker/build-push-action@v5
         with:
-          context: ${{ inputs.DOCKER_CONTEXT_PATH }}
-          file: ${{ inputs.DOCKERFILE_PATH }}
+          context: ${{ github.workspace }}/${{ inputs.DOCKER_CONTEXT_PATH }}
+          file: ${{ github.workspace }}/${{ inputs.DOCKERFILE_PATH }}
           push: true
           tags: |
             ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }}
             ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:latest
-          
+                
       - name: Run Trivy security scan
         if: ${{ inputs.enable_tests }}
         uses: aquasecurity/trivy-action@master
