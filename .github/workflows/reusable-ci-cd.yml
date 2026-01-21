@@ -263,11 +263,6 @@ jobs:
       security-events: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Checkout caller repository
         uses: actions/checkout@v4
         with:
@@ -279,6 +274,7 @@ jobs:
           echo "Repo: ${{ github.event.repository.full_name }}"
           echo "Ref:  ${{ github.ref }}"
           ls -R .
+          cat app/_version.py
 
 
       - name: Set up Docker Buildx
