@@ -215,7 +215,6 @@ jobs:
         id: compute_version
         shell: bash
         run: |
-
           if [[ "${{ inputs.VERSION_FILE_NAME }}" == "None" ]]; then
             echo "Using hardcoded version."
             echo "version=bge-m3" >> "$GITHUB_OUTPUT"
@@ -264,45 +263,31 @@ jobs:
       security-events: write
 
     steps:
-      - name: Checkout repository at version tag
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to custom Docker registry
+        uses: docker/login-action@v3
         with:
-          fetch-depth: 0
-          repository: ${{ github.event.repository.full_name }}
-          ref: ${{ needs.pre-build.outputs.version }}
+          registry: ${{ inputs.DOCKER_REGISTRY }} 
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - run: |
-          echo "Repo: ${{ github.event.repository.full_name }}"
-          echo "Ref:  ${{ github.ref }}"
-          ls -R .
-          cat app/_version.py
-          docker login ${{ inputs.DOCKER_REGISTRY }} -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker build -t ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }} .
-          docker tag ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }} ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:latest
-          docker push ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }}
-          docker push ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:latest
-
-#      - name: Set up Docker Buildx
-#        uses: docker/setup-buildx-action@v3
-#
-#      - name: Log in to custom Docker registry
-#        uses: docker/login-action@v3
-#        with:
-#          registry: ${{ inputs.DOCKER_REGISTRY }}
-#          username: ${{ secrets.DOCKER_USERNAME }}
-#          password: ${{ secrets.DOCKER_PASSWORD }}
-#
-#      - name: Build and push Docker image with dynamic tag
-#        uses: docker/build-push-action@v5
-#        with:
-#          context: ${{ github.workspace }}/${{ inputs.DOCKER_CONTEXT_PATH }}
-#          file: ${{ github.workspace }}/${{ inputs.DOCKERFILE_PATH }}
-#          push: true
-#          no-cache: true
-#          tags: |
-#            ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }}
-#            ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:latest
-                
+      - name: Build and push Docker image with dynamic tag
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ inputs.DOCKER_CONTEXT_PATH }} #/embedding-services/BAAI-bge-m3
+          file: ${{ inputs.DOCKERFILE_PATH }}
+          push: true
+          tags: |
+            ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }}
+            ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:latest
+          cache-from: type=registry,ref=${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:buildcache,mode=max
+          
       - name: Run Trivy security scan
         if: ${{ inputs.enable_tests }}
         uses: aquasecurity/trivy-action@master
