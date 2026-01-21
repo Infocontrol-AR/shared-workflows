@@ -268,11 +268,18 @@ jobs:
         with:
           fetch-depth: 0
 
-
-      - name: Checkout repository
+      - name: Checkout caller repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          repository: ${{ github.event.repository.full_name }}
+          ref: ${{ github.ref }}
+
+      - run: |
+          echo "Repo: ${{ github.event.repository.full_name }}"
+          echo "Ref:  ${{ github.ref }}"
+          ls -R .
+
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
