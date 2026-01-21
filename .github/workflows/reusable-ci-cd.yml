@@ -215,6 +215,9 @@ jobs:
         id: compute_version
         shell: bash
         run: |
+          ls -lah
+          pwd
+          docker build
           if [[ "${{ inputs.VERSION_FILE_NAME }}" == "None" ]]; then
             echo "Using hardcoded version."
             echo "version=bge-m3" >> "$GITHUB_OUTPUT"
