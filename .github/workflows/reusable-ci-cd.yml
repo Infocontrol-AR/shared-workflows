@@ -215,6 +215,9 @@ jobs:
         id: compute_version
         shell: bash
         run: |
+          ls -lah
+          pwd
+          docker build
           if [[ "${{ inputs.VERSION_FILE_NAME }}" == "None" ]]; then
             echo "Using hardcoded version."
             echo "version=bge-m3" >> "$GITHUB_OUTPUT"
@@ -292,6 +295,7 @@ jobs:
           context: ${{ github.workspace }}/${{ inputs.DOCKER_CONTEXT_PATH }}
           file: ${{ github.workspace }}/${{ inputs.DOCKERFILE_PATH }}
           push: true
+          no-cache: true
           tags: |
             ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }}
             ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:latest
