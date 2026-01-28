@@ -229,7 +229,7 @@ jobs:
               version="latest-${{ github.run_id }}"
               echo "version=$version" >> "$GITHUB_OUTPUT"
               ;;
-            qa|staging)
+            qa|staging|main)
               python3 /devops-tools/versionmanager.py increase "${{ inputs.VERSION_FILE_NAME }}"
               version=$(python3 /devops-tools/versionmanager.py get "${{ inputs.VERSION_FILE_NAME }}")
               version=$(echo "$version" | tr -d '\r' | xargs)
