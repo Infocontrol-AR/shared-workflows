@@ -227,11 +227,11 @@ jobs:
           echo "Branch: $ref"
           
           case "$ref" in
-            develop)
+            develop|main)
               version="latest-${{ github.run_id }}"
               echo "version=$version" >> "$GITHUB_OUTPUT"
               ;;
-            qa|staging|main)
+            qa|staging)
               python3 /devops-tools/versionmanager.py increase "${{ inputs.VERSION_FILE_NAME }}"
               version=$(python3 /devops-tools/versionmanager.py get "${{ inputs.VERSION_FILE_NAME }}")
               version=$(echo "$version" | tr -d '\r' | xargs)
@@ -442,23 +442,24 @@ jobs:
       - name: Transfer deployment files
         if: steps.check_frozen.outputs.frozen != 'true'
         run: |
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no \
+          set +H   # disables ! expansion
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -o StrictHostKeyChecking=no \
             /tmp/deployment-scripts/update-env.sh \
             neteng@${{ secrets.SSH_IP }}:/tmp/update-env.sh
             
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no \
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -o StrictHostKeyChecking=no \
             /tmp/deployment-scripts/run-smoke-tests.sh \
             neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/run-smoke-tests.sh
             
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no \
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -o StrictHostKeyChecking=no \
             /tmp/deployment-scripts/deployment.sh \
             neteng@${{ secrets.SSH_IP }}:/tmp/deployment.sh
             
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no \
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -o StrictHostKeyChecking=no \
             .env.example \
             neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/.env.example
             
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -o StrictHostKeyChecking=no \
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -r -o StrictHostKeyChecking=no \
             shared-workflows/scripts/tests/smoke/ \
             neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/${{ github.event.repository.name }}/tests/
 
@@ -468,12 +469,13 @@ jobs:
         env:
           VERSION: ${{ needs.pre-build.outputs.version }}
         run: | 
+          set +H   # disables ! expansion
           DEPLOYMENT_STATUS="failed"
           if [[ "${{ vars.ENVIRONMENT_FROZEN }}" == "true" ]]; then
             echo "Environment is frozen. Skipping deployment."
             exit 0
           fi
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
 
             # set -e
             
@@ -644,8 +646,9 @@ jobs:
       - name: Run smoke tests
         if: steps.health_check.outputs.status == 'healthy'
         run: |
+          set +H   # disables ! expansion
           echo "Running smoke tests..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
             cd workspace
             cd ${{ github.event.repository.name }}
             /home/neteng/workspace/run-smoke-tests.sh '${{ github.event.repository.name }}'
@@ -655,8 +658,9 @@ jobs:
       - name: Collect container logs
         if: always()
         run: |
+          set +H   # disables ! expansion
           echo "Collecting container logs..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no \
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -o StrictHostKeyChecking=no \
             neteng@${{ secrets.SSH_IP }} \
             "docker logs --tail 100 ${{ inputs.CONTAINER_NAME }}" > container-logs.txt || true
             
@@ -681,9 +685,10 @@ jobs:
     steps:
       - name: Rollback to previous version
         run: |
+          set +H   # disables ! expansion
           echo "🔄 Initiating rollback to version: ${{ needs.pre-build.outputs.previous_version }}"
           
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -tt -o StrictHostKeyChecking=no \
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -tt -o StrictHostKeyChecking=no \
             neteng@${{ secrets.SSH_IP }} << 'ENDSSH'
             
           set -e
