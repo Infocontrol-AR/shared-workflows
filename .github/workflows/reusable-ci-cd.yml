@@ -174,9 +174,10 @@ jobs:
       - name: Get previous version
         id: get_previous_version
         run: |
-          echo "${{ inputs.environment }}"
+          
           # Get the current deployed version for rollback purposes
-          PREV_VERSION=$(sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no \
+          set +H   # disables ! expansion
+          PREV_VERSION=$(sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -o StrictHostKeyChecking=no \
             neteng@${{ secrets.SSH_IP }} \
             "cat /home/neteng/workspace/${{ github.event.repository.name }}/.deployed_version 2>/dev/null || echo 'none'")
           echo "version=$PREV_VERSION" >> "$GITHUB_OUTPUT"
