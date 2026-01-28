@@ -15,7 +15,6 @@ on:
         description: 'DOCKER_IMAGE_NAME'
         required: true
         type: string
-
       DOCKERFILE_PATH:
         description: 'Path to Dockerfile'
         required: false
@@ -75,9 +74,18 @@ on:
         required: false
         type: number
         default: 10
+      version_type:
+        description: 'Version increment type (major, minor, patch)'
+        required: false
+        type: string
+        default: 'patch'
+      skip_build:
+        description: 'Skip build and use existing image from registry'
+        required: false
+        type: boolean
+        default: false
 
     secrets:
-
       SSH_PASSWORD:
         description: 'SSH_PASSWORD for deployment server'
         required: true
@@ -164,35 +172,6 @@ jobs:
       previous_version: ${{ steps.get_previous_version.outputs.version }}
     permissions:
       contents: write
-#    steps:
-#      - uses: actions/checkout@v4
-#      - id: compute_version
-#        shell: bash
-#        run: |
-#          if [[ "${{ inputs.VERSION_FILE_NAME }}" == "None" ]]; then
-#            echo "Using hardcoded version."
-#            echo "version=bge-m3" >> "$GITHUB_OUTPUT"
-#            exit 0
-#          fi
-#          ref="${GITHUB_REF_NAME}"
-#          if [ "$ref" = "develop" ]; then
-#            echo "version=latest-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
-#          elif [ "$ref" = "qa" ] || [ "$ref" = "staging" ]; then
-#            python3 /devops-tools/versionmanager.py increase ${{ inputs.VERSION_FILE_NAME}}          
-#            export version=$(python3 /devops-tools/versionmanager.py get ${{ inputs.VERSION_FILE_NAME}})
-#            export version="$(echo "$version" | tr -d '\r' | xargs)"
-#            git config --global user.email "devops@achilles.com"
-#            git config --global user.name "Achilles DevOps Bot"
-#            git tag -a $version -m "Tag $version created automatically"
-#            git add .
-#            git commit -m "NOTICKET: Increasing version number"
-#            cat ${{ vars.VERSION_FILE_NAME}}
-#            git push --tags
-#            git push origin $ref
-#            echo "version=$version" >> "$GITHUB_OUTPUT"
-#          else
-#            echo "version=unknown" >> "$GITHUB_OUTPUT"
-#          fi
 
     steps:
       - name: Checkout code
@@ -200,6 +179,60 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ github.token }}
+      
+      - name: Validate and fix commit messages for feature/fix branches
+        shell: bash
+        run: |
+          # Get the branch name
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BRANCH_NAME="${{ github.head_ref }}"
+          else
+            BRANCH_NAME="${{ github.ref_name }}"
+          fi
+          
+          echo "Branch name: $BRANCH_NAME"
+          
+          # Check if branch starts with feature/ or fix/
+          if [[ "$BRANCH_NAME" =~ ^(feature|fix)/([0-9]{3})- ]]; then
+            TICKET_NUMBER="${BASH_REMATCH[2]}"
+            echo "Found ticket number: $TICKET_NUMBER"
+            
+            # Get the current commit SHA
+            CURRENT_COMMIT=$(git rev-parse HEAD)
+            
+            # Get the commit message
+            COMMIT_MSG=$(git log -1 --pretty=%B)
+            
+            echo "Current commit message: $COMMIT_MSG"
+            
+            # Check if commit message already starts with the ticket number
+            if [[ ! "$COMMIT_MSG" =~ ^${TICKET_NUMBER} ]]; then
+              echo "Commit message does not start with $TICKET_NUMBER, updating..."
+              
+              # Prepend ticket number to commit message
+              NEW_COMMIT_MSG="${TICKET_NUMBER}: ${COMMIT_MSG}"
+              
+              # Amend the commit with the new message
+              git config user.email "devops@achilles.com"
+              git config user.name "Achilles DevOps Bot"
+              git commit --amend -m "$NEW_COMMIT_MSG"
+              
+              echo "Updated commit message to: $NEW_COMMIT_MSG"
+              
+              # Push the amended commit (force push)
+              git push --force-with-lease origin HEAD:$BRANCH_NAME
+              
+              echo "Commit message has been updated and pushed"
+            else
+              echo "Commit message already starts with ticket number $TICKET_NUMBER"
+            fi
+          elif [[ "$BRANCH_NAME" =~ ^(feature|fix)/ ]]; then
+            # Branch starts with feature/ or fix/ but doesn't have valid ticket number
+            echo "::error::Branch name '$BRANCH_NAME' must follow pattern feature/XXX-* or fix/XXX-* where XXX is a 3-digit number"
+            exit 1
+          else
+            echo "Branch is not a feature or fix branch, skipping commit message validation"
+          fi
       
       - name: Get previous version
         id: get_previous_version
@@ -221,8 +254,19 @@ jobs:
             exit 0
           fi
           
+          # If skip_build is true, read version from file without incrementing
+          if [[ "${{ inputs.skip_build }}" == "true" ]]; then
+            echo "=== Skip build mode: Reading existing version from ${{ inputs.VERSION_FILE_NAME }} ==="
+            version=$(python3 /devops-tools/versionmanager.py get "${{ inputs.VERSION_FILE_NAME }}")
+            version=$(echo "$version" | tr -d '\r' | xargs)
+            echo "Using existing version: $version"
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
           ref="${GITHUB_REF_NAME}"
           echo "Branch: $ref"
+          echo "Version Type: ${{ inputs.version_type }}"
           
           case "$ref" in
             develop)
@@ -230,6 +274,7 @@ jobs:
               echo "version=$version" >> "$GITHUB_OUTPUT"
               ;;
             qa|staging)
+              echo "=== Version increment type: ${{ inputs.version_type }} ==="
               python3 /devops-tools/versionmanager.py increase "${{ inputs.VERSION_FILE_NAME }}"
               version=$(python3 /devops-tools/versionmanager.py get "${{ inputs.VERSION_FILE_NAME }}")
               version=$(echo "$version" | tr -d '\r' | xargs)
@@ -256,6 +301,7 @@ jobs:
     runs-on: [self-hosted]
     environment: ${{ inputs.environment }}
     needs: pre-build
+    if: ${{ !inputs.skip_build }}
     permissions:
       contents: read
       packages: write
@@ -279,7 +325,7 @@ jobs:
       - name: Build and push Docker image with dynamic tag
         uses: docker/build-push-action@v5
         with:
-          context: ${{ inputs.DOCKER_CONTEXT_PATH }} #/embedding-services/BAAI-bge-m3
+          context: ${{ inputs.DOCKER_CONTEXT_PATH }}
           file: ${{ inputs.DOCKERFILE_PATH }}
           push: true
           tags: |
@@ -289,7 +335,13 @@ jobs:
           cache-to: type=registry,ref=${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:buildcache,mode=max
           
       - name: Run Trivy security scan
-        if: ${{ inputs.enable_tests }}
+        if: |
+          inputs.enable_tests && 
+          (github.ref == 'refs/heads/develop' || 
+           startsWith(github.head_ref, 'feature/') || 
+           startsWith(github.head_ref, 'fix/') ||
+           startsWith(github.ref_name, 'feature/') || 
+           startsWith(github.ref_name, 'fix/'))
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'image'
@@ -299,14 +351,15 @@ jobs:
           severity: 'CRITICAL,HIGH'
           exit-code: '0'
           ignore-unfixed: true
-#      Not available in our current subscription
-#      - name: Upload Trivy results to GitHub Security
-#        if: ${{ inputs.enable_tests }}
-#        uses: github/codeql-action/upload-sarif@v4
-#        with:
-#          sarif_file: 'trivy-results.sarif'
+
       - name: Upload Trivy report as artifact
-        if: ${{ inputs.enable_tests }}
+        if: |
+          inputs.enable_tests && 
+          (github.ref == 'refs/heads/develop' || 
+           startsWith(github.head_ref, 'feature/') || 
+           startsWith(github.head_ref, 'fix/') ||
+           startsWith(github.ref_name, 'feature/') || 
+           startsWith(github.ref_name, 'fix/'))
         uses: actions/upload-artifact@v4
         with:
           name: trivy-report-${{ needs.pre-build.outputs.version }}
@@ -316,7 +369,7 @@ jobs:
     runs-on: [self-hosted]
     environment: ${{ inputs.environment }}
     needs: pre-build
-    if: ${{ inputs.enable_tests }}
+    if: ${{ inputs.enable_tests && !inputs.skip_build }}
     permissions:
       contents: read
       
@@ -367,15 +420,17 @@ jobs:
 
       - name: Set up SonarQube project
         continue-on-error: true
-        if: ${{ inputs.environment == 'development' }} 
+        if: |
+          github.ref == 'refs/heads/develop' || 
+          startsWith(github.head_ref, 'feature/') || 
+          startsWith(github.head_ref, 'fix/') ||
+          startsWith(github.ref_name, 'feature/') || 
+          startsWith(github.ref_name, 'fix/')
         run: |
-          # Create project and get token
           PROJECT_KEY="${{ github.event.repository.name }}"
-          # Create project (using default admin credentials)
           curl -u admin:admin -X POST "http://localhost:9000/api/projects/create?project=${PROJECT_KEY}&name=${PROJECT_KEY}"
           echo "http://localhost:9000/api/projects/create?project=${PROJECT_KEY}&name=${PROJECT_KEY}"
 
-          # Generate user token for analysis
           echo  "http://localhost:9000/api/user_tokens/generate?name=github-actions-${GITHUB_RUN_ID}"
           curl -u admin:admin -X POST "http://localhost:9000/api/user_tokens/generate?name=github-actions" -vvv
           TOKEN_RESPONSE=$(curl -u admin:admin -X POST "http://localhost:9000/api/user_tokens/generate?name=github-actions-${GITHUB_RUN_ID}")
@@ -401,11 +456,12 @@ jobs:
             echo "Ignoring errors for now, change next line to 'exit 1' to enforce quality gate."
             exit 0
           fi
+          
   deploy:
     needs: [build, pre-build, test-and-quality]
     if: |
       always() && 
-      needs.build.result == 'success' &&
+      (needs.build.result == 'success' || needs.build.result == 'skipped') &&
       (needs.test-and-quality.result == 'success' || needs.test-and-quality.result == 'skipped')
     runs-on: [self-hosted]
     environment: ${{ inputs.environment }}
@@ -433,7 +489,6 @@ jobs:
             echo "frozen=false" >> "$GITHUB_OUTPUT"
           fi
            
-      # Copy scripts to a temporary location accessible via SSH
       - name: Prepare deployment scripts
         if: steps.check_frozen.outputs.frozen != 'true'
         run: |
@@ -471,6 +526,7 @@ jobs:
         if: steps.check_frozen.outputs.frozen != 'true'
         env:
           VERSION: ${{ needs.pre-build.outputs.version }}
+          SKIP_BUILD: ${{ inputs.skip_build }}
         run: | 
           DEPLOYMENT_STATUS="failed"
           if [[ "${{ vars.ENVIRONMENT_FROZEN }}" == "true" ]]; then
@@ -478,12 +534,11 @@ jobs:
             exit 0
           fi
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
-
-            # set -e
             
             echo "=== Deployment started ==="
             echo "Version: ${{ needs.pre-build.outputs.version }}"
             echo "Repository: ${{ github.event.repository.name }}"
+            echo "Skip Build Mode: ${{ inputs.skip_build }}"
             
             docker buildx prune -af
             docker system prune -af
@@ -550,6 +605,17 @@ jobs:
             export NETWORK_NAME="achilles-middleware-network"
             export SSH_IP=${{ secrets.SSH_IP }}
 
+            # If skip_build mode, pull the image from ACR before running deployment
+            if [[ "${{ inputs.skip_build }}" == "true" ]]; then
+              echo "=== Skip build mode: Pulling image from ACR ==="
+              echo "Pulling: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${VERSION}"
+              docker pull ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${VERSION}
+              if [ $? -ne 0 ]; then
+                echo "::error::Failed to pull image ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${VERSION} from ACR"
+                exit 1
+              fi
+            fi
+
             # Run deployment script
             echo "Running deployment script..."
             /tmp/deployment.sh
@@ -559,16 +625,12 @@ jobs:
             echo "All services started successfully!"
 
             echo "To view logs --> docker logs -f ${CONTAINER_NAME}"
-            # echo "Running smoke tests..."
-            # /home/neteng/workspace/run-smoke-tests.sh ${{ github.event.repository.name }}
             exit 0
           EOF
 
-          # Capture the exit code of the previous command immediately
           rc=$?
           echo "Exit code so far: $rc"
 
-          # Determine deployment status from the exit code
           if [ "$rc" -eq 0 ]; then
             DEPLOYMENT_STATUS="success"
           else
