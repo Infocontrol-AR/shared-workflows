@@ -15,7 +15,21 @@ on:
         description: 'DOCKER_IMAGE_NAME'
         required: true
         type: string
-
+      IMAGE_TAG:
+        description: 'Override Docker image tag/version (if not set, version will be calculated automatically)'
+        required: false
+        type: string
+        default: 'None'
+      VERSION_NUMBER:
+        description: 'Version number increment type (major, minor, or patch)'
+        required: false
+        type: string
+        default: 'patch'
+      SKIP_BUILD:
+        description: 'Skip build stages and deploy existing version from app/_version.py'
+        required: false
+        type: boolean
+        default: false
       DOCKERFILE_PATH:
         description: 'Path to Dockerfile'
         required: false
@@ -156,9 +170,42 @@ on:
 
 jobs:
 
+  get-version:
+    runs-on: [self-hosted]
+    environment: ${{ inputs.environment }}
+    if: ${{ inputs.SKIP_BUILD }}
+    outputs:
+      version: ${{ steps.read_version.outputs.version }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Read version from app/_version.py
+        id: read_version
+        run: |
+          if [ -f "app/_version.py" ]; then
+            # Extract version from _version.py
+            # Assuming format like: __version__ = "1.2.3" or __version__ = '1.2.3'
+            VERSION=$(grep -oP '__version__\s*=\s*["\047]\K[^"\047]+' app/_version.py || echo "")
+            
+            if [ -z "$VERSION" ]; then
+              echo "::error::Could not extract version from app/_version.py"
+              exit 1
+            fi
+            
+            echo "Extracted version: $VERSION"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::app/_version.py not found"
+            exit 1
+          fi
+
   pre-build:
     runs-on: [self-hosted]
     environment: ${{ inputs.environment }}
+    if: ${{ !inputs.SKIP_BUILD }}
     outputs:
       version: ${{ steps.compute_version.outputs.version }}
       previous_version: ${{ steps.get_previous_version.outputs.version }}
@@ -187,6 +234,14 @@ jobs:
         id: compute_version
         shell: bash
         run: |
+          # Check if IMAGE_TAG is set and not 'None'
+          if [[ "${{ inputs.IMAGE_TAG }}" != "None" && -n "${{ inputs.IMAGE_TAG }}" ]]; then
+            echo "Using provided IMAGE_TAG: ${{ inputs.IMAGE_TAG }}"
+            echo "version=${{ inputs.IMAGE_TAG }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          # Otherwise, calculate version as before
           if [[ "${{ inputs.VERSION_FILE_NAME }}" == "None" ]]; then
             echo "Using hardcoded version."
             echo "version=bge-m3" >> "$GITHUB_OUTPUT"
@@ -197,12 +252,29 @@ jobs:
           echo "Branch: $ref"
           
           case "$ref" in
-            develop|main)
+            develop|main|feature/*|issue/*|fix/*)
               version="latest-${{ github.run_id }}"
               echo "version=$version" >> "$GITHUB_OUTPUT"
               ;;
-            qa|staging)
-              python3 /devops-tools/versionmanager.py increase "${{ inputs.VERSION_FILE_NAME }}"
+            qa|staging|bugfix/*)
+              python3 /devops-tools/versionmanager.py increase "${{ inputs.VERSION_FILE_NAME }}" --number "${{ inputs.VERSION_NUMBER }}"
+              version=$(python3 /devops-tools/versionmanager.py get "${{ inputs.VERSION_FILE_NAME }}")
+              version=$(echo "$version" | tr -d '\r' | xargs)
+              
+              git config user.email "devops@achilles.com"
+              git config user.name "Achilles DevOps Bot"
+              
+              git tag -a "$version" -m "Tag $version created automatically"
+              git add .
+              git commit -m "NOTICKET: Increasing version number" || echo "No changes to commit"
+              
+              git push --tags
+              git push origin "$ref"
+              
+              echo "version=$version" >> "$GITHUB_OUTPUT"
+              ;;
+            hotfix/*)
+              python3 /devops-tools/versionmanager.py increase "${{ inputs.VERSION_FILE_NAME }}" --number "patch"
               version=$(python3 /devops-tools/versionmanager.py get "${{ inputs.VERSION_FILE_NAME }}")
               version=$(echo "$version" | tr -d '\r' | xargs)
               
@@ -228,6 +300,7 @@ jobs:
     runs-on: [self-hosted]
     environment: ${{ inputs.environment }}
     needs: pre-build
+    if: ${{ !inputs.SKIP_BUILD }}
     permissions:
       contents: read
       packages: write
@@ -282,7 +355,7 @@ jobs:
     runs-on: [self-hosted]
     environment: ${{ inputs.environment }}
     needs: pre-build
-    if: ${{ inputs.enable_tests }}
+    if: ${{ inputs.enable_tests && !inputs.SKIP_BUILD }}
     permissions:
       contents: read
       
@@ -368,19 +441,32 @@ jobs:
             exit 0
           fi
   deploy:
-    needs: [build, pre-build, test-and-quality]
+    needs: [build, pre-build, test-and-quality, get-version]
     if: |
       always() && 
-      needs.build.result == 'success' &&
-      (needs.test-and-quality.result == 'success' || needs.test-and-quality.result == 'skipped')
+      (
+        (!inputs.SKIP_BUILD && needs.build.result == 'success' && (needs.test-and-quality.result == 'success' || needs.test-and-quality.result == 'skipped')) ||
+        (inputs.SKIP_BUILD && needs.get-version.result == 'success')
+      )
     runs-on: [self-hosted]
     environment: ${{ inputs.environment }}
     permissions:
       contents: read
     outputs:
       deployment_status: ${{ steps.deployment.outputs.status }}
+      version: ${{ steps.set_version.outputs.version }}
 
     steps:
+      - name: Set version for deployment
+        id: set_version
+        run: |
+          if [[ "${{ inputs.SKIP_BUILD }}" == "true" ]]; then
+            echo "version=${{ needs.get-version.outputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "Using version from app/_version.py: ${{ needs.get-version.outputs.version }}"
+          else
+            echo "version=${{ needs.pre-build.outputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "Using version from build: ${{ needs.pre-build.outputs.version }}"
+          fi
 
       - name: Checkout shared workflows repo
         uses: actions/checkout@v3
@@ -437,7 +523,7 @@ jobs:
         id: deployment
         if: steps.check_frozen.outputs.frozen != 'true'
         env:
-          VERSION: ${{ needs.pre-build.outputs.version }}
+          VERSION: ${{ steps.set_version.outputs.version }}
         run: | 
           set +H   # disables ! expansion
           DEPLOYMENT_STATUS="failed"
@@ -450,7 +536,7 @@ jobs:
             # set -e
             
             echo "=== Deployment started ==="
-            echo "Version: ${{ needs.pre-build.outputs.version }}"
+            echo "Version: ${{ steps.set_version.outputs.version }}"
             echo "Repository: ${{ github.event.repository.name }}"
             
             docker buildx prune -af
@@ -470,7 +556,7 @@ jobs:
             if [ -f .deployed_version ]; then
               cp .deployed_version .deployed_version.backup
             fi
-            echo "${{ needs.pre-build.outputs.version }}" > .deployed_version
+            echo "${{ steps.set_version.outputs.version }}" > .deployed_version
             
             # Backup existing .env
             if [ -f .env ]; then
@@ -500,7 +586,7 @@ jobs:
               DEBUG "${{ vars.DEBUG }}" \
               DOCKER_REGISTRY "${{ inputs.DOCKER_REGISTRY }}" \
               DOCKER_IMAGE_NAME "${{ inputs.DOCKER_IMAGE_NAME }}" \
-              VERSION "${{ needs.pre-build.outputs.version }}" \
+              VERSION "${{ steps.set_version.outputs.version }}" \
               KAFKA_SCHEMA_REGISTRY_URL "${{ secrets.KAFKA_SCHEMA_REGISTRY_URL }}" \
               KAFKA_SCHEMA_REGISTRY_API_KEY "${{ secrets.KAFKA_SCHEMA_REGISTRY_API_KEY }}" \
               KAFKA_SCHEMA_REGISTRY_API_SECRET "${{ secrets.KAFKA_SCHEMA_REGISTRY_API_SECRET }}" \
@@ -514,7 +600,7 @@ jobs:
             export CONTAINER_PORT=${{ inputs.CONTAINER_PORT }}
             export DOCKER_REGISTRY=${{ inputs.DOCKER_REGISTRY }}
             export DOCKER_IMAGE_NAME=${{ inputs.DOCKER_IMAGE_NAME }}
-            export VERSION=${{ needs.pre-build.outputs.version }}
+            export VERSION=${{ steps.set_version.outputs.version }}
             export NETWORK_NAME="achilles-middleware-network"
             export SSH_IP=${{ secrets.SSH_IP }}
 
@@ -552,7 +638,7 @@ jobs:
           exit 0
 
   health-check:
-    needs: [deploy, pre-build]
+    needs: [deploy]
     if: |
       always() &&
       needs.deploy.result == 'success' &&
@@ -628,25 +714,49 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: container-logs-${{ needs.pre-build.outputs.version }}
+          name: container-logs-${{ needs.deploy.outputs.version }}
           path: container-logs.txt
           retention-days: 7
 
   rollback:
-    needs: [health-check, pre-build, deploy]
+    needs: [health-check, pre-build, deploy, get-version]
     if: |
       always() &&
       inputs.rollback_enabled == true &&
       (needs.deploy.result == 'failure' || needs.health-check.outputs.health_status == 'unhealthy') &&
-      needs.pre-build.outputs.previous_version != 'none'
+      (
+        (!inputs.SKIP_BUILD && needs.pre-build.outputs.previous_version != 'none') ||
+        inputs.SKIP_BUILD
+      )
     runs-on: [self-hosted]
     environment: ${{ inputs.environment }}
     
     steps:
+      - name: Get previous version for rollback
+        id: get_rollback_version
+        run: |
+          set +H   # disables ! expansion
+          if [[ "${{ inputs.SKIP_BUILD }}" == "true" ]]; then
+            # When skipping build, get the currently deployed version from the server
+            PREV_VERSION=$(sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -o StrictHostKeyChecking=no \
+              neteng@${{ secrets.SSH_IP }} \
+              "cat /home/neteng/workspace/${{ github.event.repository.name }}/.deployed_version.backup 2>/dev/null || echo 'none'")
+          else
+            PREV_VERSION="${{ needs.pre-build.outputs.previous_version }}"
+          fi
+          
+          echo "rollback_version=$PREV_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Rollback version: $PREV_VERSION"
+          
+          if [[ "$PREV_VERSION" == "none" ]]; then
+            echo "::error::No previous version available for rollback"
+            exit 1
+          fi
+          
       - name: Rollback to previous version
         run: |
           set +H   # disables ! expansion
-          echo "🔄 Initiating rollback to version: ${{ needs.pre-build.outputs.previous_version }}"
+          echo "🔄 Initiating rollback to version: ${{ steps.get_rollback_version.outputs.rollback_version }}"
           
           sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -tt -o StrictHostKeyChecking=no \
             neteng@${{ secrets.SSH_IP }} << 'ENDSSH'
@@ -679,7 +789,7 @@ jobs:
           set +a
           
           # Set rollback version
-          export VERSION="${{ needs.pre-build.outputs.previous_version }}"
+          export VERSION="${{ steps.get_rollback_version.outputs.rollback_version }}"
           export CONTAINER_NAME="${{ inputs.CONTAINER_NAME }}"
           export CONTAINER_PORT="${{ inputs.CONTAINER_PORT }}"
           export DOCKER_REGISTRY="${{ inputs.DOCKER_REGISTRY }}"
