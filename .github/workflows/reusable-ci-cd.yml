@@ -205,7 +205,6 @@ jobs:
   pre-build:
     runs-on: [self-hosted]
     environment: ${{ inputs.environment }}
-    if: ${{ !inputs.SKIP_BUILD }}
     outputs:
       version: ${{ steps.compute_version.outputs.version }}
       previous_version: ${{ steps.get_previous_version.outputs.version }}
@@ -218,8 +217,64 @@ jobs:
           fetch-depth: 0
           token: ${{ github.token }}
       
+      - name: Validate commits and branch naming
+        id: validate_commits
+        run: |
+          echo "=== Running commit and branch validation ==="
+          
+          ref="${GITHUB_REF_NAME}"
+          echo "Branch: $ref"
+          
+          # Check if commits are GPG signed
+          echo "Checking GPG signatures..."
+          UNSIGNED_COMMITS=$(git log --show-signature -1 2>&1 | grep -c "No signature" || true)
+          
+          if [ "$UNSIGNED_COMMITS" -gt 0 ]; then
+            echo "::warning::Latest commit is not GPG signed. Consider signing your commits for better security."
+          else
+            echo "✅ Latest commit is GPG signed"
+          fi
+          
+          # Extract ticket number from branch name if it matches the pattern
+          TICKET_NUMBER=""
+          if [[ "$ref" =~ ^(feature|issue|fix|hotfix|bugfix)/([0-9]{3}) ]]; then
+            TICKET_NUMBER="${BASH_REMATCH[2]}"
+            echo "Detected ticket number: $TICKET_NUMBER"
+            
+            # Get the last commit message
+            COMMIT_MSG=$(git log -1 --pretty=%B)
+            echo "Current commit message: $COMMIT_MSG"
+            
+            # Check if commit message starts with "XXX:"
+            if [[ ! "$COMMIT_MSG" =~ ^${TICKET_NUMBER}: ]]; then
+              echo "Commit message does not start with '${TICKET_NUMBER}:'. Amending commit..."
+              
+              # Amend the commit message
+              NEW_COMMIT_MSG="${TICKET_NUMBER}: ${COMMIT_MSG}"
+              
+              git config user.email "devops@achilles.com"
+              git config user.name "Achilles DevOps Bot"
+              
+              git commit --amend -m "$NEW_COMMIT_MSG"
+              
+              # Force push the amended commit
+              git push --force-with-lease origin "$ref"
+              
+              echo "✅ Commit message amended to: $NEW_COMMIT_MSG"
+            else
+              echo "✅ Commit message already starts with '${TICKET_NUMBER}:'"
+            fi
+          elif [[ "$ref" =~ ^(develop|main|qa|staging)$ ]]; then
+            echo "✅ Branch '$ref' is a standard branch, skipping ticket number validation"
+          else
+            echo "::warning::Branch name '$ref' does not follow the expected pattern (feature/XXX, issue/XXX, fix/XXX, hotfix/XXX, bugfix/XXX where XXX is a 3-digit number). Consider following the naming convention."
+          fi
+          
+          echo "=== Validation complete ==="
+      
       - name: Get previous version
         id: get_previous_version
+        if: ${{ !inputs.SKIP_BUILD }}
         run: |
           
           # Get the current deployed version for rollback purposes
@@ -232,6 +287,7 @@ jobs:
           
       - name: Compute version
         id: compute_version
+        if: ${{ !inputs.SKIP_BUILD }}
         shell: bash
         run: |
           # Check if IMAGE_TAG is set and not 'None'
