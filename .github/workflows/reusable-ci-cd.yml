@@ -153,6 +153,9 @@ on:
       KAFKA_SASL_USERNAME:
         description: 'KAFKA_SASL_USERNAME'
         required: false
+      JINA_API_KEY:
+        description: 'JINA_API_KEY'
+        required: false
 
 jobs:
 
@@ -504,7 +507,8 @@ jobs:
               KAFKA_SCHEMA_REGISTRY_API_SECRET "${{ secrets.KAFKA_SCHEMA_REGISTRY_API_SECRET }}" \
               KAFKA_BOOTSTRAP "${{ secrets.KAFKA_BOOTSTRAP }}" \
               KAFKA_SASL_USERNAME "${{ secrets.KAFKA_SASL_USERNAME }}" \
-              KAFKA_SASL_PASSWORD "${{ secrets.KAFKA_SASL_PASSWORD }}"
+              KAFKA_SASL_PASSWORD "${{ secrets.KAFKA_SASL_PASSWORD }}" \
+              JINA_API_KEY "${{ secrets.JINA_API_KEY }}"
             set -a
             source .env
             set +a
