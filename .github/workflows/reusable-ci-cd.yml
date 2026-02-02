@@ -156,6 +156,15 @@ on:
       JINA_API_KEY:
         description: 'JINA_API_KEY'
         required: false
+      KAFKA_CLIENT_ID:
+        description: 'KAFKA_CLIENT_ID'
+        required: false
+      KAFKA_TOPIC_PREFIX:
+        description: 'KAFKA_TOPIC_PREFIX'
+        required: false
+      KAFKA_GROUP_ID:
+        description: 'KAFKA_GROUP_ID'
+        required: false
 
 jobs:
 
@@ -508,6 +517,9 @@ jobs:
               KAFKA_BOOTSTRAP "${{ secrets.KAFKA_BOOTSTRAP }}" \
               KAFKA_SASL_USERNAME "${{ secrets.KAFKA_SASL_USERNAME }}" \
               KAFKA_SASL_PASSWORD "${{ secrets.KAFKA_SASL_PASSWORD }}" \
+              KAFKA_CLIENT_ID "${{ secrets.KAFKA_CLIENT_ID }}" \
+              KAFKA_TOPIC_PREFIX "${{ secrets.KAFKA_TOPIC_PREFIX }}" \
+              KAFKA_GROUP_ID "${{ secrets.KAFKA_GROUP_ID }}" \
               JINA_API_KEY "${{ secrets.JINA_API_KEY }}"
             set -a
             source .env
