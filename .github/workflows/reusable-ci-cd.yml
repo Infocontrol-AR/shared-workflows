@@ -167,6 +167,36 @@ on:
       KAFKA_SASL_USERNAME:
         description: 'KAFKA_SASL_USERNAME'
         required: false
+      JINA_API_KEY:
+        description: 'JINA_API_KEY'
+        required: false
+      KAFKA_CLIENT_ID:
+        description: 'KAFKA_CLIENT_ID'
+        required: false
+      KAFKA_TOPIC_PREFIX:
+        description: 'KAFKA_TOPIC_PREFIX'
+        required: false
+      KAFKA_GROUP_ID:
+        description: 'KAFKA_GROUP_ID'
+        required: false
+      KAFKA_KEY_SCHEMA_ID_AI_UPSERT:
+        description: 'KAFKA_KEY_SCHEMA_ID_AI_UPSERT'
+        required: false
+      KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE:
+        description: 'KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE'
+        required: false
+      KAFKA_KEY_SCHEMA_ID_DOCUMENT_UPDATE:
+        description: 'KAFKA_KEY_SCHEMA_ID_DOCUMENT_UPDATE'
+        required: false
+      KAFKA_SCHEMA_ID_AI_UPSERT:
+        description: 'KAFKA_SCHEMA_ID_AI_UPSERT'
+        required: false
+      KAFKA_SCHEMA_ID_BATCH_UPDATE:
+        description: 'KAFKA_SCHEMA_ID_BATCH_UPDATE'
+        required: false
+      KAFKA_SCHEMA_ID_DOCUMENT_UPDATE:
+        description: 'KAFKA_SCHEMA_ID_DOCUMENT_UPDATE'
+        required: false
 
 jobs:
 
@@ -648,7 +678,17 @@ jobs:
               KAFKA_SCHEMA_REGISTRY_API_SECRET "${{ secrets.KAFKA_SCHEMA_REGISTRY_API_SECRET }}" \
               KAFKA_BOOTSTRAP "${{ secrets.KAFKA_BOOTSTRAP }}" \
               KAFKA_SASL_USERNAME "${{ secrets.KAFKA_SASL_USERNAME }}" \
-              KAFKA_SASL_PASSWORD "${{ secrets.KAFKA_SASL_PASSWORD }}"
+              KAFKA_SASL_PASSWORD "${{ secrets.KAFKA_SASL_PASSWORD }}" \
+              KAFKA_CLIENT_ID "${{ secrets.KAFKA_CLIENT_ID }}" \
+              KAFKA_TOPIC_PREFIX "${{ secrets.KAFKA_TOPIC_PREFIX }}" \
+              KAFKA_GROUP_ID "${{ secrets.KAFKA_GROUP_ID }}" \
+              JINA_API_KEY "${{ secrets.JINA_API_KEY }}" \
+              KAFKA_KEY_SCHEMA_ID_AI_UPSERT "${{ secrets.KAFKA_KEY_SCHEMA_ID_AI_UPSERT }}" \
+              KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE "${{ secrets.KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE }}" \
+              KAFKA_KEY_SCHEMA_ID_DOCUMENT_UPDATE "${{ secrets.KAFKA_KEY_SCHEMA_ID_DOCUMENT_UPDATE }}" \
+              KAFKA_SCHEMA_ID_AI_UPSERT "${{ secrets.KAFKA_SCHEMA_ID_AI_UPSERT }}" \
+              KAFKA_SCHEMA_ID_BATCH_UPDATE "${{ secrets.KAFKA_SCHEMA_ID_BATCH_UPDATE }}" \
+              KAFKA_SCHEMA_ID_DOCUMENT_UPDATE "${{ secrets.KAFKA_SCHEMA_ID_DOCUMENT_UPDATE }}"
             set -a
             source .env
             set +a
