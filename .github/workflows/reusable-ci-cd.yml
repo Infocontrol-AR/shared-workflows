@@ -171,6 +171,9 @@ on:
       KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE:
         description: 'KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE'
         required: false
+      KAFKA_KEY_SCHEMA_ID_DOCUMENT_UPDATE:
+        description: 'KAFKA_KEY_SCHEMA_ID_DOCUMENT_UPDATE'
+        required: false
       KAFKA_SCHEMA_ID_AI_UPSERT:
         description: 'KAFKA_SCHEMA_ID_AI_UPSERT'
         required: false
@@ -538,6 +541,7 @@ jobs:
               JINA_API_KEY "${{ secrets.JINA_API_KEY }}" \
               KAFKA_KEY_SCHEMA_ID_AI_UPSERT "${{ secrets.KAFKA_KEY_SCHEMA_ID_AI_UPSERT }}" \
               KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE "${{ secrets.KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE }}" \
+              KAFKA_KEY_SCHEMA_ID_DOCUMENT_UPDATE "${{ secrets.KAFKA_KEY_SCHEMA_ID_DOCUMENT_UPDATE }}" \
               KAFKA_SCHEMA_ID_AI_UPSERT "${{ secrets.KAFKA_SCHEMA_ID_AI_UPSERT }}" \
               KAFKA_SCHEMA_ID_BATCH_UPDATE "${{ secrets.KAFKA_SCHEMA_ID_BATCH_UPDATE }}" \
               KAFKA_SCHEMA_ID_DOCUMENT_UPDATE "${{ secrets.KAFKA_SCHEMA_ID_DOCUMENT_UPDATE }}"
