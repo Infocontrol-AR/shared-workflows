@@ -183,6 +183,15 @@ on:
       KAFKA_SCHEMA_ID_DOCUMENT_UPDATE:
         description: 'KAFKA_SCHEMA_ID_DOCUMENT_UPDATE'
         required: false
+      MONGO_URI:
+        description: 'MONGO_URI'
+        required: false
+      MONGO_DB:
+        description: 'MONGO_DB'
+        required: false
+      MONGO_COLLECTION:
+        description: 'MONGO_COLLECTION'
+        required: false
 
 jobs:
 
@@ -544,7 +553,10 @@ jobs:
               KAFKA_KEY_SCHEMA_ID_DOCUMENT_UPDATE "${{ secrets.KAFKA_KEY_SCHEMA_ID_DOCUMENT_UPDATE }}" \
               KAFKA_SCHEMA_ID_AI_UPSERT "${{ secrets.KAFKA_SCHEMA_ID_AI_UPSERT }}" \
               KAFKA_SCHEMA_ID_BATCH_UPDATE "${{ secrets.KAFKA_SCHEMA_ID_BATCH_UPDATE }}" \
-              KAFKA_SCHEMA_ID_DOCUMENT_UPDATE "${{ secrets.KAFKA_SCHEMA_ID_DOCUMENT_UPDATE }}"
+              KAFKA_SCHEMA_ID_DOCUMENT_UPDATE "${{ secrets.KAFKA_SCHEMA_ID_DOCUMENT_UPDATE }}" \
+              MONGO_URI "${{ secrets.MONGO_URI }}" \
+              MONGO_DB "${{ secrets.MONGO_DB }}" \
+              MONGO_COLLECTION "${{ secrets.MONGO_COLLECTION }}"
             set -a
             source .env
             set +a
