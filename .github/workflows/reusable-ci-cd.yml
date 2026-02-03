@@ -165,6 +165,21 @@ on:
       KAFKA_GROUP_ID:
         description: 'KAFKA_GROUP_ID'
         required: false
+      KAFKA_KEY_SCHEMA_ID_AI_UPSERT:
+        description: 'KAFKA_KEY_SCHEMA_ID_AI_UPSERT'
+        required: false
+      KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE:
+        description: 'KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE'
+        required: false
+      KAFKA_SCHEMA_ID_AI_UPSERT:
+        description: 'KAFKA_SCHEMA_ID_AI_UPSERT'
+        required: false
+      KAFKA_SCHEMA_ID_BATCH_UPDATE:
+        description: 'KAFKA_SCHEMA_ID_BATCH_UPDATE'
+        required: false
+      KAFKA_SCHEMA_ID_DOCUMENT_UPDATE:
+        description: 'KAFKA_SCHEMA_ID_DOCUMENT_UPDATE'
+        required: false
 
 jobs:
 
@@ -520,7 +535,12 @@ jobs:
               KAFKA_CLIENT_ID "${{ secrets.KAFKA_CLIENT_ID }}" \
               KAFKA_TOPIC_PREFIX "${{ secrets.KAFKA_TOPIC_PREFIX }}" \
               KAFKA_GROUP_ID "${{ secrets.KAFKA_GROUP_ID }}" \
-              JINA_API_KEY "${{ secrets.JINA_API_KEY }}"
+              JINA_API_KEY "${{ secrets.JINA_API_KEY }}" \
+              KAFKA_KEY_SCHEMA_ID_AI_UPSERT "${{ secrets.KAFKA_KEY_SCHEMA_ID_AI_UPSERT }}" \
+              KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE "${{ secrets.KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE }}" \
+              KAFKA_SCHEMA_ID_AI_UPSERT "${{ secrets.KAFKA_SCHEMA_ID_AI_UPSERT }}" \
+              KAFKA_SCHEMA_ID_BATCH_UPDATE "${{ secrets.KAFKA_SCHEMA_ID_BATCH_UPDATE }}" \
+              KAFKA_SCHEMA_ID_DOCUMENT_UPDATE "${{ secrets.KAFKA_SCHEMA_ID_DOCUMENT_UPDATE }}"
             set -a
             source .env
             set +a
