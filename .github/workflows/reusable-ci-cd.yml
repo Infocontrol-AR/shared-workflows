@@ -241,25 +241,48 @@ jobs:
               echo "version=$version" >> "$GITHUB_OUTPUT"
               ;;
             qa|staging|main)
-              python3 /devops-tools/versionmanager.py increase "${{ inputs.VERSION_FILE_NAME }}"
-              version=$(python3 /devops-tools/versionmanager.py get "${{ inputs.VERSION_FILE_NAME }}")
+              # Try to increase version
+              python3 /devops-tools/versionmanager.py increase "app/_version.py"
+              version=$(python3 /devops-tools/versionmanager.py get "app/_version.py")
               version=$(echo "$version" | tr -d '\r' | xargs)
-              
+
+              echo "Calculated version: $version"
+
+              # Check if tag already exists
+              if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
+                echo "Tag $version already exists. Using latest existing X.Y.Z tag."
+
+                # Get latest tag matching X.Y.Z format
+                latest_tag=$(git tag --list "[0-9]*.[0-9]*.[0-9]*" \
+                  | sort -V \
+                  | tail -n 1)
+
+                if [[ -z "$latest_tag" ]]; then
+                  echo "::error::No existing X.Y.Z tags found"
+                  exit 1
+                fi
+
+                echo "Latest tag: $latest_tag"
+
+                # Replace version in app/_version.py
+                echo "__version__ = $latest_tag" > app/_version.py
+
+                echo "version=$latest_tag" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+
+              # Tag does not exist → proceed normally
               git config user.email "devops@achilles.com"
               git config user.name "Achilles DevOps Bot"
-              
+
               git tag -a "$version" -m "Tag $version created automatically"
               git add .
               git commit -m "NOTICKET: Increasing version number" || echo "No changes to commit"
-              
+
               git push --tags
               git push origin "$ref"
-              
+
               echo "version=$version" >> "$GITHUB_OUTPUT"
-              ;;
-            *)
-              echo "version=unknown" >> "$GITHUB_OUTPUT"
-              echo "::warning::Unknown branch '$ref', version set to 'unknown'"
               ;;
           esac
 
