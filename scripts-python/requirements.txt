@@ -1,0 +1,2 @@
+# Requirements for Python deployment scripts
+requests>=2.31.0

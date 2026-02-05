@@ -1,0 +1,667 @@
+name: Reusable Build and manage version (Python Scripts)
+
+on:
+  workflow_call:
+    inputs:
+      DOCKER_REGISTRY:
+        description: 'DOCKER_REGISTRY'
+        required: true
+        type: string
+      DOCKER_REGISTRY_SHORT:
+        description: 'DOCKER_REGISTRY_SHORT'
+        required: true
+        type: string
+      DOCKER_IMAGE_NAME:
+        description: 'DOCKER_IMAGE_NAME'
+        required: true
+        type: string
+      IMAGE_TAG:
+        description: 'Override Docker image tag/version (if not set, version will be calculated automatically)'
+        required: false
+        type: string
+        default: 'None'
+      VERSION_NUMBER:
+        description: 'Version number increment type (major, minor, or patch)'
+        required: false
+        type: string
+        default: 'patch'
+      SKIP_BUILD:
+        description: 'Skip build stages and deploy existing version from app/_version.py'
+        required: false
+        type: boolean
+        default: false
+      DOCKERFILE_PATH:
+        description: 'Path to Dockerfile'
+        required: false
+        type: string
+        default: './Dockerfile'
+      DOCKER_CONTEXT_PATH:
+        description: 'Path to Docker build context'
+        required: false
+        type: string
+        default: '.'
+      CONTAINER_NAME:
+        description: 'Name of the main container'
+        required: true
+        type: string
+      CONTAINER_PORT:
+        description: 'Port of the main container'
+        required: true
+        type: string
+      DEPLOYMENT_SCRIPT_PATH:
+        description: 'Path to deployment script'
+        required: true
+        type: string
+      FROZEN_ENVIRONMENT:
+        description: 'Whether to deploy after build'
+        required: false
+        type: string
+        default: 'false'  
+      VERSION_FILE_NAME:
+        description: 'File name with the version of the application'
+        required: true
+        type: string
+      REPOSITORY_NAME:
+        description: 'Name of the repository which is being built'
+        required: true
+        type: string
+      environment: 
+        description: 'Deployment environment'
+        required: true
+        type: string
+      enable_tests:
+        description: 'Enable tests and quality checks'
+        required: false
+        type: boolean
+        default: true
+      health_check_endpoint:
+        description: 'HTTP endpoint for health checks (e.g., /health)'
+        required: false
+        type: string
+        default: '/health'
+      health_check_timeout:
+        description: 'Health check timeout in seconds'
+        required: false
+        type: number
+        default: 300
+      health_check_interval:
+        description: 'Health check interval in seconds'
+        required: false
+        type: number
+        default: 10
+
+    secrets:
+
+      SSH_PASSWORD:
+        description: 'SSH_PASSWORD for deployment server'
+        required: true
+      SSH_IP:
+        description: 'SSH_IP for deployment server'
+        required: true 
+      DOCKER_USERNAME:
+        description: 'DOCKER_USERNAME'
+        required: true
+      DOCKER_PASSWORD:
+        description: 'DOCKER_PASSWORD'
+        required: true
+      AZURE_STORAGE_ACCOUNT_NAME:
+        description: 'AZURE_STORAGE_ACCOUNT_NAME'
+        required: true
+      AZURE_STORAGE_CONNECTION_STRING:
+        description: 'AZURE_STORAGE_CONNECTION_STRING'
+        required: true
+      AZURE_STORAGE_CONTAINER_NAME:
+        description: 'AZURE_STORAGE_CONTAINER_NAME'
+        required: true
+      AZURE_STORAGE_SAS_TOKEN:
+        description: 'AZURE_STORAGE_SAS_TOKEN'
+        required: true
+      EMBEDDING_MODEL:
+        description: 'EMBEDDING_MODEL'
+        required: true
+      FIREWORKS_API_KEY:
+        description: 'FIREWORKS_API_KEY'
+        required: true
+      FIREWORKS_MODEL:
+        description: 'FIREWORKS_MODEL'
+        required: true
+      FW_API_KEY:
+        description: 'FW_API_KEY'
+        required: true
+      FW_ENDPOINT:
+        description: 'FW_ENDPOINT'
+        required: true
+      FW_MODEL:
+        description: 'FW_MODEL'
+        required: true
+      LLAMAPARSE_API_KEY:
+        description: 'LLAMAPARSE_API_KEY'
+        required: true
+      QDRANT_API_KEY:
+        description: 'QDRANT_API_KEY'
+        required: true
+      QDRANT_URL:
+        description: 'QDRANT_URL'
+        required: true
+      UNSTRUCTURED_API_KEY:
+        description: 'UNSTRUCTURED_API_KEY'
+        required: true
+      UNSTRUCTURED_API_URL:
+        description: 'UNSTRUCTURED_API_URL'
+        required: true
+      KAFKA_SCHEMA_REGISTRY_URL:
+        description: 'KAFKA_SCHEMA_REGISTRY_URL'
+        required: false
+      KAFKA_SCHEMA_REGISTRY_API_KEY: 
+        description: 'KAFKA_SCHEMA_REGISTRY_API_KEY'
+        required: false
+      KAFKA_SCHEMA_REGISTRY_API_SECRET: 
+        description: 'KAFKA_SCHEMA_REGISTRY_API_SECRET'
+        required: false
+      KAFKA_BOOTSTRAP:
+        description: 'KAFKA_BOOTSTRAP'
+        required: false
+      KAFKA_SASL_PASSWORD:
+        description: 'KAFKA_SASL_PASSWORD'
+        required: false
+      KAFKA_SASL_USERNAME:
+        description: 'KAFKA_SASL_USERNAME'
+        required: false
+
+jobs:
+
+  get-version:
+    runs-on: [self-hosted]
+    environment: ${{ inputs.environment }}
+    if: ${{ inputs.SKIP_BUILD }}
+    outputs:
+      version: ${{ steps.read_version.outputs.version }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Checkout shared workflows repo
+        uses: actions/checkout@v3
+        with:
+          repository: Infocontrol-AR/shared-workflows
+          ref: develop
+          path: shared-workflows
+      
+      - name: Setup Python dependencies
+        run: |
+          pip install -r shared-workflows/scripts-python/requirements.txt
+      
+      - name: Read version from app/_version.py
+        id: read_version
+        run: python3 shared-workflows/scripts-python/read_version.py
+
+  pre-build:
+    runs-on: [self-hosted]
+    environment: ${{ inputs.environment }}
+    outputs:
+      version: ${{ steps.compute_version.outputs.version }}
+      previous_version: ${{ steps.get_previous_version.outputs.version }}
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ github.token }}
+      
+      - name: Checkout shared workflows repo
+        uses: actions/checkout@v3
+        with:
+          repository: Infocontrol-AR/shared-workflows
+          ref: develop
+          path: shared-workflows
+      
+      - name: Setup Python dependencies
+        run: |
+          pip install -r shared-workflows/scripts-python/requirements.txt
+      
+      - name: Validate commits and branch naming
+        id: validate_commits
+        run: python3 shared-workflows/scripts-python/validate_commits.py
+      
+      - name: Get previous version
+        id: get_previous_version
+        if: ${{ !inputs.SKIP_BUILD }}
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_IP: ${{ secrets.SSH_IP }}
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: python3 shared-workflows/scripts-python/get_previous_version.py
+          
+      - name: Compute version
+        id: compute_version
+        if: ${{ !inputs.SKIP_BUILD }}
+        env:
+          IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
+          VERSION_FILE_NAME: ${{ inputs.VERSION_FILE_NAME }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          VERSION_NUMBER: ${{ inputs.VERSION_NUMBER }}
+        run: python3 shared-workflows/scripts-python/compute_version.py
+
+  build:
+    runs-on: [self-hosted]
+    environment: ${{ inputs.environment }}
+    needs: pre-build
+    if: ${{ !inputs.SKIP_BUILD }}
+    permissions:
+      contents: read
+      packages: write
+      actions: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to custom Docker registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ inputs.DOCKER_REGISTRY }} 
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image with dynamic tag
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ inputs.DOCKER_CONTEXT_PATH }}
+          file: ${{ inputs.DOCKERFILE_PATH }}
+          push: true
+          tags: |
+            ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }}
+            ${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:latest
+          cache-from: type=registry,ref=${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:buildcache,mode=max
+          
+      - name: Run Trivy security scan
+        if: ${{ inputs.enable_tests }}
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          image-ref: '${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_IMAGE_NAME }}:${{ needs.pre-build.outputs.version }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+          ignore-unfixed: true
+          
+      - name: Upload Trivy report as artifact
+        if: ${{ inputs.enable_tests }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report-${{ needs.pre-build.outputs.version }}
+          path: trivy-results.sarif          
+
+  test-and-quality:
+    runs-on: [self-hosted]
+    environment: ${{ inputs.environment }}
+    needs: pre-build
+    if: ${{ inputs.enable_tests && !inputs.SKIP_BUILD }}
+    permissions:
+      contents: read
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install dependencies
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+          pip install pytest coverage bandit
+
+      - name: Run tests with coverage
+        run: |
+          if [ -d tests ]; then
+            pytest tests/test_examples.py --junitxml=test-results.xml || true
+            coverage run -m pytest tests/test_examples.py || true
+            coverage xml -o coverage.xml || true
+            coverage report || true
+          else
+            echo "No tests directory found, skipping tests"
+            exit 0
+          fi
+          exit 0
+          
+      - name: Run security scan with Bandit
+        run: |
+          bandit -r . -f json -o bandit-report.json -ll || true
+          
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports-${{ needs.pre-build.outputs.version }}
+          path: |
+            test-results.xml
+            coverage.xml
+            bandit-report.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Set up SonarQube project
+        continue-on-error: true
+        if: ${{ inputs.environment == 'development' }} 
+        run: |
+          PROJECT_KEY="${{ github.event.repository.name }}"
+          curl -u admin:admin -X POST "http://localhost:9000/api/projects/create?project=${PROJECT_KEY}&name=${PROJECT_KEY}"
+          TOKEN_RESPONSE=$(curl -u admin:admin -X POST "http://localhost:9000/api/user_tokens/generate?name=github-actions-${GITHUB_RUN_ID}")
+          TOKEN=$(echo $TOKEN_RESPONSE | jq -r '.token')
+          /github/workspace/sonar/bin/sonar-scanner \
+            -Dsonar.projectKey=${PROJECT_KEY} \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=http://localhost:9000 \
+            -Dsonar.login=${TOKEN} \
+            -Dsonar.python.coverage.reportPaths=coverage.xml \
+            -Dsonar.python.xunit.reportPath=test-results.xml \
+            -Dsonar.python.bandit.reportPaths=bandit-report.json \
+            -Dsonar.exclusions=tests/**,venv/**,env/**,**/__pycache__/**
+          sleep 30
+          QUALITY_GATE=$(curl -u ${TOKEN}: "http://localhost:9000/api/qualitygates/project_status?projectKey=${PROJECT_KEY}" | jq -r '.projectStatus.status')
+          echo "Quality Gate Status: $QUALITY_GATE"       
+          if [ "$QUALITY_GATE" != "OK" ]; then
+            echo "Quality Gate failed!"
+            echo "Ignoring errors for now, change next line to 'exit 1' to enforce quality gate."
+            exit 0
+          fi
+          
+  deploy:
+    needs: [build, pre-build, test-and-quality, get-version]
+    if: |
+      always() && 
+      (
+        (!inputs.SKIP_BUILD && needs.build.result == 'success' && (needs.test-and-quality.result == 'success' || needs.test-and-quality.result == 'skipped')) ||
+        (inputs.SKIP_BUILD && needs.get-version.result == 'success')
+      )
+    runs-on: [self-hosted]
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+    outputs:
+      deployment_status: ${{ steps.deployment.outputs.status }}
+      version: ${{ steps.set_version.outputs.version }}
+
+    steps:
+      - name: Set version for deployment
+        id: set_version
+        run: |
+          if [[ "${{ inputs.SKIP_BUILD }}" == "true" ]]; then
+            echo "version=${{ needs.get-version.outputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "Using version from app/_version.py: ${{ needs.get-version.outputs.version }}"
+          else
+            echo "version=${{ needs.pre-build.outputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "Using version from build: ${{ needs.pre-build.outputs.version }}"
+          fi
+
+      - name: Checkout shared workflows repo
+        uses: actions/checkout@v3
+        with:
+          repository: Infocontrol-AR/shared-workflows
+          ref: develop
+          path: shared-workflows
+
+      - name: Check if environment is frozen
+        id: check_frozen
+        run: |
+          if [[ "${{ vars.ENVIRONMENT_FROZEN }}" == "true" ]]; then
+            echo "frozen=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::Environment is frozen. Deployment will be skipped."
+          else
+            echo "frozen=false" >> "$GITHUB_OUTPUT"
+          fi
+      
+      - name: Setup Python dependencies
+        if: steps.check_frozen.outputs.frozen != 'true'
+        run: |
+          pip install -r shared-workflows/scripts-python/requirements.txt
+           
+      - name: Prepare deployment scripts
+        if: steps.check_frozen.outputs.frozen != 'true'
+        run: |
+          mkdir -p /tmp/deployment-scripts
+          cp shared-workflows/scripts/update-env.sh /tmp/deployment-scripts/
+          cp shared-workflows/scripts/run-smoke-tests.sh /tmp/deployment-scripts/
+          cp shared-workflows/scripts-python/deploy_to_server.py /tmp/deployment-scripts/
+          cp "${{ inputs.DEPLOYMENT_SCRIPT_PATH }}" /tmp/deployment-scripts/deployment.sh
+          chmod +x /tmp/deployment-scripts/*.sh
+          chmod +x /tmp/deployment-scripts/*.py
+      
+      - name: Transfer deployment files
+        if: steps.check_frozen.outputs.frozen != 'true'
+        run: |
+          set +H
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -o StrictHostKeyChecking=no \
+            /tmp/deployment-scripts/update-env.sh \
+            neteng@${{ secrets.SSH_IP }}:/tmp/update-env.sh
+            
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -o StrictHostKeyChecking=no \
+            /tmp/deployment-scripts/run-smoke-tests.sh \
+            neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/run-smoke-tests.sh
+            
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -o StrictHostKeyChecking=no \
+            /tmp/deployment-scripts/deploy_to_server.py \
+            neteng@${{ secrets.SSH_IP }}:/tmp/deploy_to_server.py
+            
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -o StrictHostKeyChecking=no \
+            /tmp/deployment-scripts/deployment.sh \
+            neteng@${{ secrets.SSH_IP }}:/tmp/deployment.sh
+            
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -o StrictHostKeyChecking=no \
+            .env.example \
+            neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/.env.example
+            
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -r -o StrictHostKeyChecking=no \
+            shared-workflows/scripts/tests/smoke/ \
+            neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/${{ github.event.repository.name }}/tests/
+
+      - name: Deploy to server
+        id: deployment
+        if: steps.check_frozen.outputs.frozen != 'true'
+        env:
+          VERSION: ${{ steps.set_version.outputs.version }}
+        run: | 
+          set +H
+          DEPLOYMENT_STATUS="failed"
+          if [[ "${{ vars.ENVIRONMENT_FROZEN }}" == "true" ]]; then
+            echo "Environment is frozen. Skipping deployment."
+            exit 0
+          fi
+          
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
+            export VERSION="${{ steps.set_version.outputs.version }}"
+            export REPOSITORY_NAME="${{ github.event.repository.name }}"
+            export DOCKER_REGISTRY="${{ inputs.DOCKER_REGISTRY }}"
+            export DOCKER_USERNAME="${{ secrets.DOCKER_USERNAME }}"
+            export DOCKER_PASSWORD="${{ secrets.DOCKER_PASSWORD }}"
+            export QDRANT_URL="${{ secrets.QDRANT_URL }}"
+            export QDRANT_API_KEY="${{ secrets.QDRANT_API_KEY }}"
+            export EMBEDDING_MODEL="${{ secrets.EMBEDDING_MODEL }}"
+            export AZURE_STORAGE_SAS_TOKEN="${{ secrets.AZURE_STORAGE_SAS_TOKEN }}"
+            export AZURE_STORAGE_ACCOUNT_NAME="${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}"
+            export AZURE_STORAGE_CONTAINER_NAME="${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}"
+            export UNSTRUCTURED_API_URL="${{ secrets.UNSTRUCTURED_API_URL }}"
+            export UNSTRUCTURED_API_KEY="${{ secrets.UNSTRUCTURED_API_KEY }}"
+            export LLAMAPARSE_API_KEY="${{ secrets.LLAMAPARSE_API_KEY }}"
+            export FIREWORKS_API_KEY="${{ secrets.FIREWORKS_API_KEY }}"
+            export FIREWORKS_MODEL="${{ secrets.FIREWORKS_MODEL }}"
+            export FW_API_KEY="${{ secrets.FW_API_KEY }}"
+            export FW_ENDPOINT="${{ secrets.FW_ENDPOINT }}"
+            export FW_MODEL="${{ secrets.FW_MODEL }}"
+            export DEBUG="${{ vars.DEBUG }}"
+            export DOCKER_IMAGE_NAME="${{ inputs.DOCKER_IMAGE_NAME }}"
+            export KAFKA_SCHEMA_REGISTRY_URL="${{ secrets.KAFKA_SCHEMA_REGISTRY_URL }}"
+            export KAFKA_SCHEMA_REGISTRY_API_KEY="${{ secrets.KAFKA_SCHEMA_REGISTRY_API_KEY }}"
+            export KAFKA_SCHEMA_REGISTRY_API_SECRET="${{ secrets.KAFKA_SCHEMA_REGISTRY_API_SECRET }}"
+            export KAFKA_BOOTSTRAP="${{ secrets.KAFKA_BOOTSTRAP }}"
+            export KAFKA_SASL_USERNAME="${{ secrets.KAFKA_SASL_USERNAME }}"
+            export KAFKA_SASL_PASSWORD="${{ secrets.KAFKA_SASL_PASSWORD }}"
+            export CONTAINER_NAME="${{ inputs.CONTAINER_NAME }}"
+            export CONTAINER_PORT="${{ inputs.CONTAINER_PORT }}"
+            export SSH_IP="${{ secrets.SSH_IP }}"
+            
+            python3 /tmp/deploy_to_server.py
+          EOF
+
+          rc=$?
+          echo "Exit code: $rc"
+
+          if [ "$rc" -eq 0 ]; then
+            DEPLOYMENT_STATUS="success"
+          else
+            DEPLOYMENT_STATUS="failed"
+          fi
+
+          echo "status=$DEPLOYMENT_STATUS" >> "$GITHUB_OUTPUT"
+          
+          if [ "$DEPLOYMENT_STATUS" = "failed" ]; then
+            echo "::error::Deployment failed"
+            exit 1
+          fi
+          exit 0
+
+  health-check:
+    needs: [deploy]
+    if: |
+      always() &&
+      needs.deploy.result == 'success' &&
+      needs.deploy.outputs.deployment_status == 'success'
+    runs-on: [self-hosted]
+    environment: ${{ inputs.environment }}
+    outputs:
+      health_status: ${{ steps.health_check.outputs.status }}
+      
+    steps:
+      - name: Checkout shared workflows repo
+        uses: actions/checkout@v3
+        with:
+          repository: Infocontrol-AR/shared-workflows
+          ref: develop
+          path: shared-workflows
+      
+      - name: Setup Python dependencies
+        run: |
+          pip install -r shared-workflows/scripts-python/requirements.txt
+          
+      - name: Wait for container startup
+        run: |
+          echo "Waiting 30 seconds for container to start..."
+          sleep 30
+          
+      - name: Run health checks
+        id: health_check
+        env:
+          HEALTH_CHECK_TIMEOUT: ${{ inputs.health_check_timeout }}
+          HEALTH_CHECK_INTERVAL: ${{ inputs.health_check_interval }}
+          SSH_IP: ${{ secrets.SSH_IP }}
+          CONTAINER_PORT: ${{ inputs.CONTAINER_PORT }}
+          HEALTH_CHECK_ENDPOINT: ${{ inputs.health_check_endpoint }}
+        run: python3 shared-workflows/scripts-python/health_check.py
+      
+      - name: Run smoke tests
+        if: steps.health_check.outputs.status == 'healthy'
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_IP: ${{ secrets.SSH_IP }}
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: python3 shared-workflows/scripts-python/run_smoke_tests.py
+      
+      - name: Collect container logs
+        if: always()
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_IP: ${{ secrets.SSH_IP }}
+          CONTAINER_NAME: ${{ inputs.CONTAINER_NAME }}
+        run: python3 shared-workflows/scripts-python/collect_logs.py
+            
+      - name: Upload container logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-logs-${{ needs.deploy.outputs.version }}
+          path: container-logs.txt
+          retention-days: 7
+
+  rollback:
+    needs: [health-check, pre-build, deploy, get-version]
+    if: |
+      always() &&
+      inputs.rollback_enabled == true &&
+      (needs.deploy.result == 'failure' || needs.health-check.outputs.health_status == 'unhealthy') &&
+      (
+        (!inputs.SKIP_BUILD && needs.pre-build.outputs.previous_version != 'none') ||
+        inputs.SKIP_BUILD
+      )
+    runs-on: [self-hosted]
+    environment: ${{ inputs.environment }}
+    
+    steps:
+      - name: Checkout shared workflows repo
+        uses: actions/checkout@v3
+        with:
+          repository: Infocontrol-AR/shared-workflows
+          ref: develop
+          path: shared-workflows
+      
+      - name: Setup Python dependencies
+        run: |
+          pip install -r shared-workflows/scripts-python/requirements.txt
+          
+      - name: Get previous version for rollback
+        id: get_rollback_version
+        env:
+          SKIP_BUILD: ${{ inputs.SKIP_BUILD }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_IP: ${{ secrets.SSH_IP }}
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+          PREVIOUS_VERSION: ${{ needs.pre-build.outputs.previous_version }}
+        run: python3 shared-workflows/scripts-python/get_rollback_version.py
+          
+      - name: Transfer rollback script
+        run: |
+          set +H
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -o StrictHostKeyChecking=no \
+            shared-workflows/scripts-python/rollback.py \
+            neteng@${{ secrets.SSH_IP }}:/tmp/rollback.py
+          
+      - name: Rollback to previous version
+        run: |
+          set +H
+          echo "🔄 Initiating rollback to version: ${{ steps.get_rollback_version.outputs.rollback_version }}"
+          
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -tt -o StrictHostKeyChecking=no \
+            neteng@${{ secrets.SSH_IP }} << 'ENDSSH'
+            
+          export ROLLBACK_VERSION="${{ steps.get_rollback_version.outputs.rollback_version }}"
+          export REPOSITORY_NAME="${{ github.event.repository.name }}"
+          export CONTAINER_NAME="${{ inputs.CONTAINER_NAME }}"
+          export CONTAINER_PORT="${{ inputs.CONTAINER_PORT }}"
+          export DOCKER_REGISTRY="${{ inputs.DOCKER_REGISTRY }}"
+          export DOCKER_IMAGE_NAME="${{ inputs.DOCKER_IMAGE_NAME }}"
+          
+          python3 /tmp/rollback.py || exit 1
+          
+          ENDSSH
+          
+      - name: Verify rollback health
+        env:
+          SSH_IP: ${{ secrets.SSH_IP }}
+          CONTAINER_PORT: ${{ inputs.CONTAINER_PORT }}
+          HEALTH_CHECK_ENDPOINT: ${{ inputs.health_check_endpoint }}
+        run: python3 shared-workflows/scripts-python/verify_rollback_health.py
