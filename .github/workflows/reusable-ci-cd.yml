@@ -347,7 +347,7 @@ jobs:
           echo "Branch: $ref"
           
           case "$ref" in
-            develop|main|feature/*|issue/*|fix/*)
+            develop|develop_local|feature/*|issue/*|fix/*)
               version="latest-${{ github.run_id }}"
               echo "version=$version" >> "$GITHUB_OUTPUT"
               ;;
