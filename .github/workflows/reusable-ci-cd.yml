@@ -224,22 +224,26 @@ jobs:
       - name: Read version from app/_version.py
         id: read_version
         run: |
-          if [ -f "app/_version.py" ]; then
-            # Extract version from _version.py
-            # Assuming format like: __version__ = "1.2.3" or __version__ = '1.2.3'
-            VERSION=$(grep -oP '__version__\s*=\s*["\047]\K[^"\047]+' app/_version.py || echo "")
-            
-            if [ -z "$VERSION" ]; then
-              echo "::error::Could not extract version from app/_version.py"
-              exit 1
-            fi
-            
-            echo "Extracted version: $VERSION"
-            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          else
-            echo "::error::app/_version.py not found"
+          # Find the most recently created tag matching vX.Y.Z pattern
+          echo "Fetching all tags..."
+          git fetch --tags --force
+          
+          # Get the most recent tag matching vX.Y.Z pattern (sorted by version)
+          # This uses git's version sorting which correctly handles semantic versions
+          LATEST_TAG=$(git tag --list "v[0-9]*.[0-9]*.[0-9]*" --sort=-version:refname | head -n 1)
+          
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No tags matching vX.Y.Z pattern found"
+            echo "::notice::Creating initial version v0.0.1"
             exit 1
+          else
+            echo "Latest tag found: $LATEST_TAG"
+            # Strip the 'v' prefix to get the version number
+            VERSION="${LATEST_TAG#v}"
+            echo "Extracted version: $VERSION"
           fi
+          
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
   pre-build:
     runs-on: [self-hosted]
