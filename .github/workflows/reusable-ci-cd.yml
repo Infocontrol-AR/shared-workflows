@@ -333,13 +333,12 @@ jobs:
           if [[ "${{ inputs.IMAGE_TAG }}" != "None" && -n "${{ inputs.IMAGE_TAG }}" ]]; then
             echo "Using provided IMAGE_TAG: ${{ inputs.IMAGE_TAG }}"
             echo "version=${{ inputs.IMAGE_TAG }}" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          
-          # Otherwise, calculate version as before
-          if [[ "${{ inputs.VERSION_FILE_NAME }}" == "None" ]]; then
-            echo "Using hardcoded version."
-            echo "version=bge-m3" >> "$GITHUB_OUTPUT"
+
+            git tag -a "$version" -m "Tag $version created automatically"
+            git add .
+            
+            git push --tags
+            git push origin "$ref"            
             exit 0
           fi
           
@@ -347,40 +346,37 @@ jobs:
           echo "Branch: $ref"
           
           case "$ref" in
-            develop|develop_local|feature/*|issue/*|fix/*)
-              version="latest-${{ github.run_id }}"
-              echo "version=$version" >> "$GITHUB_OUTPUT"
-              ;;
-            qa|staging|main)
+            develop|develop_local|qa|staging|main)
               # Try to increase version
-              python3 /devops-tools/versionmanager.py increase "app/_version.py"
-              version=$(python3 /devops-tools/versionmanager.py get "app/_version.py")
-              version=$(echo "$version" | tr -d '\r' | xargs)
+              # python3 /devops-tools/versionmanager.py increase "app/_version.py"
+              # version=$(python3 /devops-tools/versionmanager.py get "app/_version.py")
+              # version=$(echo "$version" | tr -d '\r' | xargs)
+              version="$ref-${{ github.run_id }}"
 
               echo "Calculated version: $version"
 
               # Check if tag already exists
-              if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
-                echo "Tag $version already exists. Using latest existing X.Y.Z tag."
-
-                # Get latest tag matching X.Y.Z format
-                latest_tag=$(git tag --list "[0-9]*.[0-9]*.[0-9]*" \
-                  | sort -V \
-                  | tail -n 1)
-
-                if [[ -z "$latest_tag" ]]; then
-                  echo "::error::No existing X.Y.Z tags found"
-                  exit 1
-                fi
-
-                echo "Latest tag: $latest_tag"
-
-                # Replace version in app/_version.py
-                echo "__version__ = $latest_tag" > app/_version.py
-
-                echo "version=$latest_tag" >> "$GITHUB_OUTPUT"
-                exit 0
-              fi
+              #if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
+              #  echo "Tag $version already exists. Using latest existing X.Y.Z tag."
+              #
+              #  # Get latest tag matching X.Y.Z format
+              #  latest_tag=$(git tag --list "[0-9]*.[0-9]*.[0-9]*" \
+              #    | sort -V \
+              #    | tail -n 1)
+              #
+              #  if [[ -z "$latest_tag" ]]; then
+              #    echo "::error::No existing X.Y.Z tags found"
+              #    exit 1
+              #  fi
+              #
+              #  echo "Latest tag: $latest_tag"
+              #
+              #  # Replace version in app/_version.py
+              #  echo "__version__ = $latest_tag" > app/_version.py
+              #
+              #  echo "version=$latest_tag" >> "$GITHUB_OUTPUT"
+              #  exit 0
+              #fi
 
               # Tag does not exist → proceed normally
               git config user.email "devops@achilles.com"
@@ -388,13 +384,17 @@ jobs:
 
               git tag -a "$version" -m "Tag $version created automatically"
               git add .
-              git commit -m "NOTICKET: Increasing version number" || echo "No changes to commit"
+              # git commit -m "NOTICKET: Increasing version number" || echo "No changes to commit"
 
               git push --tags
               git push origin "$ref"
 
               echo "version=$version" >> "$GITHUB_OUTPUT"
               ;;
+            *)
+              version="latest-${{ github.run_id }}"
+              echo "version=$version" >> "$GITHUB_OUTPUT"
+              ;;              
           esac
 
   build:
