@@ -344,7 +344,7 @@ jobs:
             version=${{ inputs.IMAGE_TAG }}
 
             git tag -a "$version" -m "Tag $version created automatically"
-            git push --tags
+            git push --tags --force
             # git push origin "$ref"            
             exit 0
           fi
