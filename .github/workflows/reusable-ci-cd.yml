@@ -333,10 +333,14 @@ jobs:
         if: ${{ !inputs.SKIP_BUILD }}
         shell: bash
         run: |
+          ref="${GITHUB_REF_NAME}"
+          echo "Branch: $ref"
+
           # Check if IMAGE_TAG is set and not 'None'
           if [[ "${{ inputs.IMAGE_TAG }}" != "None" && -n "${{ inputs.IMAGE_TAG }}" ]]; then
             echo "Using provided IMAGE_TAG: ${{ inputs.IMAGE_TAG }}"
             echo "version=${{ inputs.IMAGE_TAG }}" >> "$GITHUB_OUTPUT"
+            version=${{ inputs.IMAGE_TAG }}
 
             git tag -a "$version" -m "Tag $version created automatically"
             git add .
@@ -345,10 +349,7 @@ jobs:
             git push origin "$ref"            
             exit 0
           fi
-          
-          ref="${GITHUB_REF_NAME}"
-          echo "Branch: $ref"
-          
+
           case "$ref" in
             develop|develop_local|qa|staging|main)
               # Try to increase version
