@@ -247,6 +247,7 @@ jobs:
   pre-build:
     runs-on: [self-hosted]
     environment: ${{ inputs.environment }}
+    if: ${{ !inputs.SKIP_BUILD }}
     outputs:
       version: ${{ steps.compute_version.outputs.version }}
       previous_version: ${{ steps.get_previous_version.outputs.version }}
