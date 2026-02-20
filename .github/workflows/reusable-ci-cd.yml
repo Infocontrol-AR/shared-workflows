@@ -239,7 +239,6 @@ jobs:
           else
             echo "Latest tag found: $LATEST_TAG"
             # Strip the 'v' prefix to get the version number
-            VERSION="${LATEST_TAG#v}"
             echo "Extracted version: $VERSION"
           fi
           
