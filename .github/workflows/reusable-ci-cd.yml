@@ -206,6 +206,24 @@ on:
       MONGO_COLLECTION:
         description: 'MONGO_COLLECTION'
         required: false
+      MONGO_RS_IP_1: 
+        description: 'MONGO_RS_IP_1'
+        required: false
+      MONGO_RS_IP_2: 
+        description: 'MONGO_RS_IP_2'
+        required: false
+      MONGO_RS_IP_3: 
+        description: 'MONGO_RS_IP_3'
+        required: false
+      MONGO_RS_HOST_1: 
+        description: 'MONGO_RS_HOST_1'
+        required: false
+      MONGO_RS_HOST_2: 
+        description: 'MONGO_RS_HOST_2'
+        required: false
+      MONGO_RS_HOST_3: 
+        description: 'MONGO_RS_HOST_3'
+        required: false
 
 jobs:
 
@@ -234,7 +252,6 @@ jobs:
           
           if [ -z "$LATEST_TAG" ]; then
             echo "No tags matching vX.Y.Z pattern found"
-            echo "::notice::Creating initial version v0.0.1"
             exit 1
           else
             echo "Latest tag found: $LATEST_TAG"
@@ -344,7 +361,7 @@ jobs:
             version=${{ inputs.IMAGE_TAG }}
 
             git tag -a "$version" -m "Tag $version created automatically"
-            git push --tags --force
+            git push --tags --force || true
             # git push origin "$ref"            
             exit 0
           fi
@@ -711,6 +728,13 @@ jobs:
               MONGO_URI "${{ secrets.MONGO_URI }}" \
               MONGO_DB "${{ secrets.MONGO_DB }}" \
               MONGO_COLLECTION "${{ secrets.MONGO_COLLECTION }}"
+              MONGO_RS_IP_1 "${{ secrets.MONGO_RS_IP_1 }}"
+              MONGO_RS_IP_2 "${{ secrets.MONGO_RS_IP_2 }}"
+              MONGO_RS_IP_3 "${{ secrets.MONGO_RS_IP_3 }}"
+              MONGO_RS_HOST_1 "${{ secrets.MONGO_RS_HOST_1 }}"
+              MONGO_RS_HOST_2 "${{ secrets.MONGO_RS_HOST_2 }}"
+              MONGO_RS_HOST_3 "${{ secrets.MONGO_RS_HOST_3 }}"
+
             set -a
             source .env
             set +a
