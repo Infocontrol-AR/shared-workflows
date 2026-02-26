@@ -727,12 +727,12 @@ jobs:
               KAFKA_SCHEMA_ID_DOCUMENT_UPDATE "${{ secrets.KAFKA_SCHEMA_ID_DOCUMENT_UPDATE }}" \
               MONGO_URI "${{ secrets.MONGO_URI }}" \
               MONGO_DB "${{ secrets.MONGO_DB }}" \
-              MONGO_COLLECTION "${{ secrets.MONGO_COLLECTION }}"
-              MONGO_RS_IP_1 "${{ secrets.MONGO_RS_IP_1 }}"
-              MONGO_RS_IP_2 "${{ secrets.MONGO_RS_IP_2 }}"
-              MONGO_RS_IP_3 "${{ secrets.MONGO_RS_IP_3 }}"
-              MONGO_RS_HOST_1 "${{ secrets.MONGO_RS_HOST_1 }}"
-              MONGO_RS_HOST_2 "${{ secrets.MONGO_RS_HOST_2 }}"
+              MONGO_COLLECTION "${{ secrets.MONGO_COLLECTION }}" \
+              MONGO_RS_IP_1 "${{ secrets.MONGO_RS_IP_1 }}" \
+              MONGO_RS_IP_2 "${{ secrets.MONGO_RS_IP_2 }}" \
+              MONGO_RS_IP_3 "${{ secrets.MONGO_RS_IP_3 }}" \
+              MONGO_RS_HOST_1 "${{ secrets.MONGO_RS_HOST_1 }}" \
+              MONGO_RS_HOST_2 "${{ secrets.MONGO_RS_HOST_2 }}" \
               MONGO_RS_HOST_3 "${{ secrets.MONGO_RS_HOST_3 }}"
 
             set -a
