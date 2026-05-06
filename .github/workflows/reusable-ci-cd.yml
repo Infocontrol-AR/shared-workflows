@@ -239,7 +239,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Read version from app/_version.py
+      - name: Read version
         id: read_version
         run: |
           # Find the most recently created tag matching vX.Y.Z pattern
@@ -360,44 +360,22 @@ jobs:
             echo "version=${{ inputs.IMAGE_TAG }}" >> "$GITHUB_OUTPUT"
             version=${{ inputs.IMAGE_TAG }}
 
+            # Delete remote tag if it exists
+            git push origin :refs/tags/$version || true
+            # Delete local tag if it exists
+            git tag -d $version || true
+            # Recreate tag
             git tag -a "$version" -m "Tag $version created automatically"
-            git push --tags --force || true
-            # git push origin "$ref"            
+            # Push tag
+            git push origin "$version"
             exit 0
           fi
 
           case "$ref" in
             develop|develop_local|qa|staging|main)
-              # Try to increase version
-              # python3 /devops-tools/versionmanager.py increase "app/_version.py"
-              # version=$(python3 /devops-tools/versionmanager.py get "app/_version.py")
-              # version=$(echo "$version" | tr -d '\r' | xargs)
+
               version="$ref-${{ github.run_id }}"
-
               echo "Calculated version: $version"
-
-              # Check if tag already exists
-              #if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
-              #  echo "Tag $version already exists. Using latest existing X.Y.Z tag."
-              #
-              #  # Get latest tag matching X.Y.Z format
-              #  latest_tag=$(git tag --list "[0-9]*.[0-9]*.[0-9]*" \
-              #    | sort -V \
-              #    | tail -n 1)
-              #
-              #  if [[ -z "$latest_tag" ]]; then
-              #    echo "::error::No existing X.Y.Z tags found"
-              #    exit 1
-              #  fi
-              #
-              #  echo "Latest tag: $latest_tag"
-              #
-              #  # Replace version in app/_version.py
-              #  echo "__version__ = $latest_tag" > app/_version.py
-              #
-              #  echo "version=$latest_tag" >> "$GITHUB_OUTPUT"
-              #  exit 0
-              #fi
 
               # Tag does not exist → proceed normally
               git config user.email "devops@achilles.com"
@@ -405,7 +383,6 @@ jobs:
 
               git tag -a "$version" -m "Tag $version created automatically"
               git add .
-              # git commit -m "NOTICKET: Increasing version number" || echo "No changes to commit"
 
               git push --tags
               git push origin "$ref"
