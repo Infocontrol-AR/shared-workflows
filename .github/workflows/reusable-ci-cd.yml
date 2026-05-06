@@ -113,113 +113,84 @@ on:
       AZURE_STORAGE_SAS_TOKEN:
         description: 'AZURE_STORAGE_SAS_TOKEN'
         required: true
-      EMBEDDING_MODEL:
-        description: 'EMBEDDING_MODEL'
-        required: true
-      FIREWORKS_API_KEY:
-        description: 'FIREWORKS_API_KEY'
-        required: true
-      FIREWORKS_MODEL:
-        description: 'FIREWORKS_MODEL'
-        required: true
-      FW_API_KEY:
-        description: 'FW_API_KEY'
-        required: true
-      FW_ENDPOINT:
-        description: 'FW_ENDPOINT'
-        required: true
-      FW_MODEL:
-        description: 'FW_MODEL'
-        required: true
-      LLAMAPARSE_API_KEY:
-        description: 'LLAMAPARSE_API_KEY'
-        required: true
-      QDRANT_API_KEY:
-        description: 'QDRANT_API_KEY'
-        required: true
-      QDRANT_URL:
-        description: 'QDRANT_URL'
-        required: true
-      UNSTRUCTURED_API_KEY:
-        description: 'UNSTRUCTURED_API_KEY'
-        required: true
-      UNSTRUCTURED_API_URL:
-        description: 'UNSTRUCTURED_API_URL'
-        required: true
-      KAFKA_SCHEMA_REGISTRY_URL:
-        description: 'KAFKA_SCHEMA_REGISTRY_URL'
+
+      RAG_API_KEY_LLAMA: 
+        description: 'RAG_API_KEY_LLAMA'
         required: false
-      KAFKA_SCHEMA_REGISTRY_API_KEY: 
-        description: 'KAFKA_SCHEMA_REGISTRY_API_KEY'
+      DB_HOST: 
+        description: 'DB_HOST'
         required: false
-      KAFKA_SCHEMA_REGISTRY_API_SECRET: 
-        description: 'KAFKA_SCHEMA_REGISTRY_API_SECRET'
+      DB_PORT: 
+        description: 'DB_PORT'
         required: false
-      KAFKA_BOOTSTRAP:
-        description: 'KAFKA_BOOTSTRAP'
+      DB_USER: 
+        description: 'DB_USER'
         required: false
-      KAFKA_SASL_PASSWORD:
-        description: 'KAFKA_SASL_PASSWORD'
+      DB_PASSWORD: 
+        description: 'DB_PASSWORD'
         required: false
-      KAFKA_SASL_USERNAME:
-        description: 'KAFKA_SASL_USERNAME'
+      DB_SCHEMA: 
+        description: 'DB_SCHEMA'
         required: false
-      JINA_API_KEY:
-        description: 'JINA_API_KEY'
+      OCR_AZURE_KEY: 
+        description: 'OCR_AZURE_KEY'
         required: false
-      KAFKA_CLIENT_ID:
-        description: 'KAFKA_CLIENT_ID'
+      GCP_KEY_BASE64: 
+        description: 'GCP_KEY_BASE64'
         required: false
-      KAFKA_TOPIC_PREFIX:
-        description: 'KAFKA_TOPIC_PREFIX'
+      FALLBACK_GCP_KEY_BASE64: 
+        description: 'FALLBACK_GCP_KEY_BASE64'
         required: false
-      KAFKA_GROUP_ID:
-        description: 'KAFKA_GROUP_ID'
+      AWS_ACCESS_KEY: 
+        description: 'AWS_ACCESS_KEY'
         required: false
-      KAFKA_KEY_SCHEMA_ID_AI_UPSERT:
-        description: 'KAFKA_KEY_SCHEMA_ID_AI_UPSERT'
+      AWS_SECRET_KEY: 
+        description: 'AWS_SECRET_KEY'
         required: false
-      KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE:
-        description: 'KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE'
+      COMPRESSOR_AWS_ACCESS_KEY: 
+        description: 'COMPRESSOR_AWS_ACCESS_KEY'
         required: false
-      KAFKA_KEY_SCHEMA_ID_DOCUMENT_UPDATE:
-        description: 'KAFKA_KEY_SCHEMA_ID_DOCUMENT_UPDATE'
+      COMPRESSOR_AWS_SECRET_KEY: 
+        description: 'COMPRESSOR_AWS_SECRET_KEY'
         required: false
-      KAFKA_SCHEMA_ID_AI_UPSERT:
-        description: 'KAFKA_SCHEMA_ID_AI_UPSERT'
+      MERCURIO_ENCRYPTER_KEY: 
+        description: 'MERCURIO_ENCRYPTER_KEY'
         required: false
-      KAFKA_SCHEMA_ID_BATCH_UPDATE:
-        description: 'KAFKA_SCHEMA_ID_BATCH_UPDATE'
+      MERCURIO_ENDPOINT_URL: 
+        description: 'MERCURIO_ENDPOINT_URL'
         required: false
-      KAFKA_SCHEMA_ID_DOCUMENT_UPDATE:
-        description: 'KAFKA_SCHEMA_ID_DOCUMENT_UPDATE'
+      MERCURIO_FALLBACK_ENDPOINT_URL: 
+        description: 'MERCURIO_FALLBACK_ENDPOINT_URL'
         required: false
-      MONGO_URI:
-        description: 'MONGO_URI'
+      GRAVITY_API_KEY: 
+        description: 'GRAVITY_API_KEY'
         required: false
-      MONGO_DB:
-        description: 'MONGO_DB'
+      QWEN_API_KEY: 
+        description: 'QWEN_API_KEY'
         required: false
-      MONGO_COLLECTION:
-        description: 'MONGO_COLLECTION'
+      AZURE_STORAGE_SAS_TOKEN_DEV: 
+        description: 'AZURE_STORAGE_SAS_TOKEN_DEV'
         required: false
-      MONGO_RS_IP_1: 
-        description: 'MONGO_RS_IP_1'
+      AZURE_STORAGE_ACCOUNT_NAME_STG: 
+        description: 'AZURE_STORAGE_ACCOUNT_NAME_STG'
         required: false
-      MONGO_RS_IP_2: 
-        description: 'MONGO_RS_IP_2'
+      AZURE_STORAGE_SAS_TOKEN_STG: 
+        description: 'AZURE_STORAGE_SAS_TOKEN_STG'
         required: false
-      MONGO_RS_IP_3: 
-        description: 'MONGO_RS_IP_3'
+      AZURE_STORAGE_ACCOUNT_NAME_PRD: 
+        description: 'AZURE_STORAGE_ACCOUNT_NAME_PRD'
         required: false
-      MONGO_RS_HOST_1: 
-        description: 'MONGO_RS_HOST_1'
+      AZURE_STORAGE_SAS_TOKEN_PRD: 
+        description: 'AZURE_STORAGE_SAS_TOKEN_PRD'
         required: false
-      MONGO_RS_HOST_2: 
-        description: 'MONGO_RS_HOST_2'
+      AZURE_FUNCTION_COMPRESSOR_KEY_DEV: 
+        description: 'AZURE_FUNCTION_COMPRESSOR_KEY_DEV'
         required: false
-      MONGO_RS_HOST_3: 
-        description: 'MONGO_RS_HOST_3'
+      AZURE_FUNCTION_COMPRESSOR_KEY_STG: 
+        description: 'AZURE_FUNCTION_COMPRESSOR_KEY_STG'
+        required: false
+      AZURE_FUNCTION_COMPRESSOR_KEY_PRD: 
+        description: 'AZURE_FUNCTION_COMPRESSOR_KEY_PRD'
         required: false
 
 jobs:
@@ -516,7 +487,7 @@ jobs:
               AZURE_STORAGE_ACCOUNT_NAME_STG: "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_STG }}" \
               AZURE_STORAGE_SAS_TOKEN_STG: "${{ secrets.AZURE_STORAGE_SAS_TOKEN_STG }}" \
               AZURE_STORAGE_ACCOUNT_NAME_PRD: "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_PRD }}" \
-              AZURE_STORAGE_SAS_TOKEN_PRD: "${{ secrets.AZURE_STORAGE_SAS TOKEN_PRD }}" \
+              AZURE_STORAGE_SAS_TOKEN_PRD: "${{ secrets.AZURE_STORAGE_SAS_TOKEN_PRD }}" \
               AZURE_FUNCTION_COMPRESSOR_KEY_DEV: "${{ secrets.AZURE_FUNCTION_COMPRESSOR_KEY_DEV }}" \ 
               AZURE_STORAGE_ACCOUNT_NAME_STG: "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_STG }}" \
               AZURE_STORAGE_SAS_TOKEN_STG: "${{ secrets.AZURE_STORAGE_SAS_TOKEN_STG }}" \
