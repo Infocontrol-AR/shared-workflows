@@ -487,49 +487,45 @@ jobs:
             chmod +x /tmp/update-env.sh
             cat .env
             /tmp/update-env.sh .env \
-              QDRANT_URL "${{ secrets.QDRANT_URL }}" \
-              QDRANT_API_KEY "${{ secrets.QDRANT_API_KEY }}" \
-              EMBEDDING_MODEL "${{ secrets.EMBEDDING_MODEL }}" \
               AZURE_STORAGE_SAS_TOKEN "${{ secrets.AZURE_STORAGE_SAS_TOKEN }}" \
               AZURE_STORAGE_ACCOUNT_NAME "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}" \
               AZURE_STORAGE_CONTAINER_NAME "${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}" \
-              UNSTRUCTURED_API_URL "${{ secrets.UNSTRUCTURED_API_URL }}" \
-              UNSTRUCTURED_API_KEY "${{ secrets.UNSTRUCTURED_API_KEY }}" \
-              LLAMAPARSE_API_KEY "${{ secrets.LLAMAPARSE_API_KEY }}" \
-              FIREWORKS_API_KEY "${{ secrets.FIREWORKS_API_KEY }}" \
-              FIREWORKS_MODEL "${{ secrets.FIREWORKS_MODEL }}" \
-              FW_API_KEY "${{ secrets.FW_API_KEY }}" \
-              FW_ENDPOINT "${{ secrets.FW_ENDPOINT }}" \
-              FW_MODEL "${{ secrets.FW_MODEL }}" \
               DEBUG "${{ vars.DEBUG }}" \
               DOCKER_REGISTRY "${{ inputs.DOCKER_REGISTRY }}" \
               DOCKER_IMAGE_NAME "${{ inputs.DOCKER_IMAGE_NAME }}" \
               VERSION "${{ steps.set_version.outputs.version }}" \
-              KAFKA_SCHEMA_REGISTRY_URL "${{ secrets.KAFKA_SCHEMA_REGISTRY_URL }}" \
-              KAFKA_SCHEMA_REGISTRY_API_KEY "${{ secrets.KAFKA_SCHEMA_REGISTRY_API_KEY }}" \
-              KAFKA_SCHEMA_REGISTRY_API_SECRET "${{ secrets.KAFKA_SCHEMA_REGISTRY_API_SECRET }}" \
-              KAFKA_BOOTSTRAP "${{ secrets.KAFKA_BOOTSTRAP }}" \
-              KAFKA_SASL_USERNAME "${{ secrets.KAFKA_SASL_USERNAME }}" \
-              KAFKA_SASL_PASSWORD "${{ secrets.KAFKA_SASL_PASSWORD }}" \
-              KAFKA_CLIENT_ID "${{ secrets.KAFKA_CLIENT_ID }}" \
-              KAFKA_TOPIC_PREFIX "${{ secrets.KAFKA_TOPIC_PREFIX }}" \
-              KAFKA_GROUP_ID "${{ secrets.KAFKA_GROUP_ID }}" \
-              JINA_API_KEY "${{ secrets.JINA_API_KEY }}" \
-              KAFKA_KEY_SCHEMA_ID_AI_UPSERT "${{ secrets.KAFKA_KEY_SCHEMA_ID_AI_UPSERT }}" \
-              KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE "${{ secrets.KAFKA_KEY_SCHEMA_ID_BATCH_UPDATE }}" \
-              KAFKA_KEY_SCHEMA_ID_DOCUMENT_UPDATE "${{ secrets.KAFKA_KEY_SCHEMA_ID_DOCUMENT_UPDATE }}" \
-              KAFKA_SCHEMA_ID_AI_UPSERT "${{ secrets.KAFKA_SCHEMA_ID_AI_UPSERT }}" \
-              KAFKA_SCHEMA_ID_BATCH_UPDATE "${{ secrets.KAFKA_SCHEMA_ID_BATCH_UPDATE }}" \
-              KAFKA_SCHEMA_ID_DOCUMENT_UPDATE "${{ secrets.KAFKA_SCHEMA_ID_DOCUMENT_UPDATE }}" \
-              MONGO_URI "${{ secrets.MONGO_URI }}" \
-              MONGO_DB "${{ secrets.MONGO_DB }}" \
-              MONGO_COLLECTION "${{ secrets.MONGO_COLLECTION }}" \
-              MONGO_RS_IP_1 "${{ secrets.MONGO_RS_IP_1 }}" \
-              MONGO_RS_IP_2 "${{ secrets.MONGO_RS_IP_2 }}" \
-              MONGO_RS_IP_3 "${{ secrets.MONGO_RS_IP_3 }}" \
-              MONGO_RS_HOST_1 "${{ secrets.MONGO_RS_HOST_1 }}" \
-              MONGO_RS_HOST_2 "${{ secrets.MONGO_RS_HOST_2 }}" \
-              MONGO_RS_HOST_3 "${{ secrets.MONGO_RS_HOST_3 }}"
+              RAG_API_KEY_LLAMA "${{ secrets.RAG_API_KEY_LLAMA }}" \
+              DB_HOST "${{ secrets.DB_HOST }}" \
+              DB_PORT "${{ secrets.DB_PORT }}" \
+              DB_USER "${{ secrets.DB_USER }}" \
+              DB_PASSWORD "${{ secrets.DB_PASSWORD }}" \
+              DB_SCHEMA "${{ secrets.DB_SCHEMA }}"  \ 
+              OCR_AZURE_KEY "${{ secrets.OCR_AZURE_KEY }}" \
+              GCP_KEY_BASE64 "${{ secrets.GCP_KEY_BASE64 }}" \
+              FALLBACK_GCP_KEY_BASE64 "${{ secrets.FALLBACK_GCP_KEY_BASE64 }}" \
+              AWS_ACCESS_KEY "${{ secrets.AWS_ACCESS_KEY }}"  \
+              AWS_SECRET_KEY "${{ secrets.AWS_SECRET_KEY }}" \
+              COMPRESSOR_AWS_ACCESS_KEY "${{ secrets.COMPRESSOR_AWS_ACCESS_KEY }}" \
+              COMPRESSOR_AWS_SECRET_KEY "${{ secrets.COMPRESSOR_AWS_SECRET_KEY }}" \
+              MERCURIO_ENCRYPTER_KEY "${{ secrets.MERCURIO_ENCRYPTER_KEY }}" \
+              MERCURIO_ENDPOINT_URL "${{ secrets.MERCURIO_ENDPOINT_URL }}" \
+              MERCURIO_FALLBACK_ENDPOINT_URL "${{ secrets.MERCURIO_FALLBACK_ENDPOINT_URL }}" \
+              GRAVITY_API_KEY "${{ secrets.GRAVITY_API_KEY }}" \
+              QWEN_API_KEY: "${{ secrets.QWEN_API_KEY }}" \ 
+              AZURE_STORAGE_SAS_TOKEN_DEV: "${{ secrets.AZURE_STORAGE_SAS_TOKEN_DEV }}" \
+              AZURE_STORAGE_ACCOUNT_NAME_STG: "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_STG }}" \
+              AZURE_STORAGE_SAS_TOKEN_STG: "${{ secrets.AZURE_STORAGE_SAS_TOKEN_STG }}" \
+              AZURE_STORAGE_ACCOUNT_NAME_PRD: "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_PRD }}" \
+              AZURE_STORAGE_SAS_TOKEN_PRD: "${{ secrets.AZURE_STORAGE_SAS TOKEN_PRD }}" \
+              AZURE_FUNCTION_COMPRESSOR_KEY_DEV: "${{ secrets.AZURE_FUNCTION_COMPRESSOR_KEY_DEV }}" \ 
+              AZURE_STORAGE_ACCOUNT_NAME_STG: "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_STG }}" \
+              AZURE_STORAGE_SAS_TOKEN_STG: "${{ secrets.AZURE_STORAGE_SAS_TOKEN_STG }}" \
+              AZURE_STORAGE_ACCOUNT_NAME_PRD: "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_PRD }}" \
+              AZURE_STORAGE_SAS_TOKEN_PRD: "${{ secrets.AZURE_STORAGE_SAS_TOKEN_PRD }}" \
+              AZURE_FUNCTION_COMPRESSOR_KEY_DEV: "${{ secrets.AZURE_FUNCTION_COMPRESSOR_KEY_DEV }}" \
+              AZURE_FUNCTION_COMPRESSOR_KEY_STG: "${{ secrets.AZURE_FUNCTION_COMPRESSOR_KEY_STG }}" \
+              AZURE_FUNCTION_COMPRESSOR_KEY_PRD: "${{ secrets.AZURE_FUNCTION_COMPRESSOR_KEY_PRD }}"
+
 
             set -a
             source .env
