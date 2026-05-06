@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+# Fail on error, undefined vars, and pipe failures
+set -euo pipefail
+
+REPO_NAME="$1"
+
+MIDDLEWARE_BASE_URL="http://${SSH_IP:-127.0.0.1}:${MIDDLEWARE_PORT:-8000}"
+CORE_BASE_URL="http://${SSH_IP:-127.0.0.1}:${RAG_SERVICE_PORT:-8040}"
+RAG_BASE_URL="http://${SSH_I:-127.0.0.1}:${RAG_SERVICE_PORT:-8040}"
+VECTORIZER_BASE_URL="http://${SSH_IP:-127.0.0.1}:${VECTORIZER_PORT:-8020}"
+
+test_rag_service() {
+  echo "Testing RAG Service"
+  python3 tests/smoke/rag_smoke_tests.py "$CORE_BASE_URL" # --core-base "$CORE_BASE_URL" --rag-base "$RAG_BASE_URL"
+}
+
+test_vectorizer() {
+  echo "Testing Vectorizer"
+  python3 tests/smoke/vectorizer_smoke_tests.py "$VECTORIZER_BASE_URL"
+}
+
+test_middleware() {
+  echo "Testing Middleware"
+  python3 tests/smoke/middleware_smoke_tests.py "$MIDDLEWARE_BASE_URL"
+}
+
+case "$REPO_NAME" in
+  ai-middleware-v3)
+    test_middleware
+    test_rag_service
+    test_vectorizer
+    ;;
+  ai-rag-service-v3)
+    test_rag_service
+    ;;
+  ai-vectorizer-v3)
+    test_vectorizer
+    ;;
+  *)
+    echo "Not testing anything, because repo name $REPO_NAME is not recognized"
+    ;;
+esac
+
+echo "Smoke tests completed."
