@@ -363,11 +363,11 @@ jobs:
           
           
   deploy:
-    needs: [build, pre-build, test-and-quality, get-version]
+    needs: [build, pre-build, get-version]
     if: |
       always() && 
       (
-        (!inputs.SKIP_BUILD && needs.build.result == 'success' && (needs.test-and-quality.result == 'success' || needs.test-and-quality.result == 'skipped')) ||
+        (!inputs.SKIP_BUILD && needs.build.result == 'success') ||
         (inputs.SKIP_BUILD && needs.get-version.result == 'success')
       )
     runs-on: [self-hosted]
