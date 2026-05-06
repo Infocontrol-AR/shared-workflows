@@ -471,7 +471,7 @@ jobs:
               DB_USER "${{ secrets.DB_USER }}" \
               DB_PASSWORD "${{ secrets.DB_PASSWORD }}" \
               DB_SCHEMA "${{ secrets.DB_SCHEMA }}"  \ 
-              OCR_AZURE_KEY "${{ secrets.OCR_AZURE_KEY }}" \
+              OCR_AZURE_KEY "new value hardcoded" \
               GCP_KEY_BASE64 "${{ secrets.GCP_KEY_BASE64 }}" \
               FALLBACK_GCP_KEY_BASE64 "${{ secrets.FALLBACK_GCP_KEY_BASE64 }}" \
               AWS_ACCESS_KEY "${{ secrets.AWS_ACCESS_KEY }}"  \
