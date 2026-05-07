@@ -168,9 +168,12 @@ on:
       QWEN_API_KEY: 
         description: 'QWEN_API_KEY'
         required: false
+      AZURE_STORAGE_ACCOUNT_NAME_DEV: 
+        description: 'AZURE_STORAGE_ACCOUNT_NAME_DEV'
+        required: false
       AZURE_STORAGE_SAS_TOKEN_DEV: 
         description: 'AZURE_STORAGE_SAS_TOKEN_DEV'
-        required: false
+        required: false        
       AZURE_STORAGE_ACCOUNT_NAME_STG: 
         description: 'AZURE_STORAGE_ACCOUNT_NAME_STG'
         required: false
