@@ -470,10 +470,10 @@ jobs:
               DB_PORT "${{ secrets.DB_PORT }}" \
               DB_USER "${{ secrets.DB_USER }}" \
               DB_PASSWORD "${{ secrets.DB_PASSWORD }}" \
-              DB_SCHEMA "${{ secrets.DB_SCHEMA }}" OCR_AZURE_KEY "new value hardcoded" \ 
+              DB_SCHEMA "${{ secrets.DB_SCHEMA }}" OCR_AZURE_KEY "${{ secrets.OCR_AZURE_KEY }}" \ 
               GCP_KEY_BASE64 "${{ secrets.GCP_KEY_BASE64 }}" \
               FALLBACK_GCP_KEY_BASE64 "${{ secrets.FALLBACK_GCP_KEY_BASE64 }}" \
-              AWS_ACCESS_KEY "${{ secrets.AWS_ACCESS_KEY }}"  \
+              AWS_ACCESS_KEY "${{ secrets.AWS_ACCESS_KEY }}" \
               AWS_SECRET_KEY "${{ secrets.AWS_SECRET_KEY }}" \
               COMPRESSOR_AWS_ACCESS_KEY "${{ secrets.COMPRESSOR_AWS_ACCESS_KEY }}" \
               COMPRESSOR_AWS_SECRET_KEY "${{ secrets.COMPRESSOR_AWS_SECRET_KEY }}" \
