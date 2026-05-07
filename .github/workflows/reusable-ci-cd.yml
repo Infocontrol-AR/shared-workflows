@@ -470,7 +470,9 @@ jobs:
               DB_PORT "${{ secrets.DB_PORT }}" \
               DB_USER "${{ secrets.DB_USER }}" \
               DB_PASSWORD "${{ secrets.DB_PASSWORD }}" \
-              DB_SCHEMA "${{ secrets.DB_SCHEMA }}" OCR_AZURE_KEY "${{ secrets.OCR_AZURE_KEY }}" GCP_KEY_BASE64 "${{ secrets.GCP_KEY_BASE64 }}" \
+              DB_SCHEMA "${{ secrets.DB_SCHEMA }}" \
+              OCR_AZURE_KEY "${{ secrets.OCR_AZURE_KEY }}" \
+              GCP_KEY_BASE64 "${{ secrets.GCP_KEY_BASE64 }}" \
               FALLBACK_GCP_KEY_BASE64 "${{ secrets.FALLBACK_GCP_KEY_BASE64 }}" \
               AWS_ACCESS_KEY "${{ secrets.AWS_ACCESS_KEY }}" \
               AWS_SECRET_KEY "${{ secrets.AWS_SECRET_KEY }}" \
@@ -480,7 +482,7 @@ jobs:
               MERCURIO_ENDPOINT_URL "${{ secrets.MERCURIO_ENDPOINT_URL }}" \
               MERCURIO_FALLBACK_ENDPOINT_URL "${{ secrets.MERCURIO_FALLBACK_ENDPOINT_URL }}" \
               GRAVITY_API_KEY "${{ secrets.GRAVITY_API_KEY }}" \
-              QWEN_API_KEY "${{ secrets.QWEN_API_KEY }}" \ 
+              QWEN_API_KEY "${{ secrets.QWEN_API_KEY }}" \
               AZURE_STORAGE_SAS_TOKEN_DEV "${{ secrets.AZURE_STORAGE_SAS_TOKEN_DEV }}" \
               AZURE_STORAGE_ACCOUNT_NAME_STG "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_STG }}" \
               AZURE_STORAGE_SAS_TOKEN_STG "${{ secrets.AZURE_STORAGE_SAS_TOKEN_STG }}" \
