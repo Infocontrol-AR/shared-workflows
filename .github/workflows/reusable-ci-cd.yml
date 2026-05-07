@@ -483,6 +483,7 @@ jobs:
               MERCURIO_FALLBACK_ENDPOINT_URL "${{ secrets.MERCURIO_FALLBACK_ENDPOINT_URL }}" \
               GRAVITY_API_KEY "${{ secrets.GRAVITY_API_KEY }}" \
               QWEN_API_KEY "${{ secrets.QWEN_API_KEY }}" \
+              AZURE_STORAGE_ACCOUNT_NAME_DEV "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_DEV }}" \
               AZURE_STORAGE_SAS_TOKEN_DEV "${{ secrets.AZURE_STORAGE_SAS_TOKEN_DEV }}" \
               AZURE_STORAGE_ACCOUNT_NAME_STG "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_STG }}" \
               AZURE_STORAGE_SAS_TOKEN_STG "${{ secrets.AZURE_STORAGE_SAS_TOKEN_STG }}" \
