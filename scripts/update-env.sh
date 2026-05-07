@@ -52,6 +52,8 @@ update_env_var() {
 
 # Process key-value pairs
 while [ $# -gt 0 ]; do
+    echo "Processing: $#"
+    echo "Parsing: $1 = $2"
     if [ $# -lt 2 ]; then
         echo "Error: Missing value for key '$1'"
         exit 1
