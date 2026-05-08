@@ -397,19 +397,19 @@ jobs:
           set +H   # disables ! expansion
           sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -o StrictHostKeyChecking=no \
             /tmp/deployment-scripts/update-env.sh \
-            neteng@${{ secrets.SSH_IP }}:/tmp/update-env.sh
+            pipelineuser@${{ secrets.SSH_IP }}:/tmp/update-env.sh
             
           sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -o StrictHostKeyChecking=no \
             /tmp/deployment-scripts/run-smoke-tests.sh \
-            neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/run-smoke-tests.sh
+            pipelineuser@${{ secrets.SSH_IP }}:/home/pipelineuser/workspace/run-smoke-tests.sh
             
           sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -o StrictHostKeyChecking=no \
             /tmp/deployment-scripts/deployment.sh \
-            neteng@${{ secrets.SSH_IP }}:/tmp/deployment.sh
+            pipelineuser@${{ secrets.SSH_IP }}:/tmp/deployment.sh
             
           sshpass -p '${{ secrets.SSH_PASSWORD }}' scp -o StrictHostKeyChecking=no \
             .env.example \
-            neteng@${{ secrets.SSH_IP }}:/home/neteng/workspace/.env.example
+            pipelineuser@${{ secrets.SSH_IP }}:/home/pipelineuser/workspace/.env.example
 
       - name: Deploy to server
         id: deployment
@@ -423,7 +423,7 @@ jobs:
             echo "Environment is frozen. Skipping deployment."
             exit 0
           fi
-          sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -tt -o StrictHostKeyChecking=no neteng@${{ secrets.SSH_IP }} << 'EOF'
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -tt -o StrictHostKeyChecking=no pipelineuser@${{ secrets.SSH_IP }} << 'EOF'
 
             # set -e
             
@@ -522,7 +522,7 @@ jobs:
 
             echo "To view logs --> docker logs -f ${CONTAINER_NAME}"
             # echo "Running smoke tests..."
-            # /home/neteng/workspace/run-smoke-tests.sh ${{ github.event.repository.name }}
+            # /home/pipelineuser/workspace/run-smoke-tests.sh ${{ github.event.repository.name }}
             exit 0
           EOF
 
