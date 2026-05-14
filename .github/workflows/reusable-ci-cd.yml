@@ -132,6 +132,9 @@ on:
       DB_SCHEMA: 
         description: 'DB_SCHEMA'
         required: false
+      DB_NAME: 
+        description: 'DB_NAME'
+        required: false
       OCR_AZURE_KEY: 
         description: 'OCR_AZURE_KEY'
         required: false
@@ -194,6 +197,87 @@ on:
         required: false
       AZURE_FUNCTION_COMPRESSOR_KEY_PRD: 
         description: 'AZURE_FUNCTION_COMPRESSOR_KEY_PRD'
+        required: false
+      JWT_SECRET_KEY: 
+        description: 'JWT_SECRET_KEY'
+        required: false
+      SECRET_KEY: 
+        description: 'SECRET_KEY'
+        required: false
+      AZURE_FORM_RECOGNIZER_KEY: 
+        description: 'AZURE_FORM_RECOGNIZER_KEY'
+        required: false
+      AZURE_FUNCTION_IMAGE_COMPRESSOR_URL_DEV:
+        description: 'AZURE_FUNCTION_IMAGE_COMPRESSOR_URL_DEV'
+        required: false
+      AZURE_FUNCTION_IMAGE_COMPRESSOR_URL_STG:
+        description: 'AZURE_FUNCTION_IMAGE_COMPRESSOR_URL_STG'
+        required: false
+      AZURE_FUNCTION_IMAGE_COMPRESSOR_URL_PRD:
+        description: 'AZURE_FUNCTION_IMAGE_COMPRESSOR_URL_PRD'
+        required: false
+      AZURE_FUNCTION_PDF_COMPRESSOR_URL_DEV:
+        description: 'AZURE_FUNCTION_PDF_COMPRESSOR_URL_DEV'
+        required: false
+      AZURE_FUNCTION_PDF_COMPRESSOR_URL_STG:
+        description: 'AZURE_FUNCTION_PDF_COMPRESSOR_URL_STG'
+        required: false
+      AZURE_FUNCTION_PDF_COMPRESSOR_URL_PRD:
+        description: 'AZURE_FUNCTION_PDF_COMPRESSOR_URL_PRD'
+        required: false
+      KAFKA_BOOTSTRAP_SERVERS: 
+        description: 'KAFKA_BOOTSTRAP_SERVERS'
+        required: false
+      LOG_LEVEL: 
+        description: 'LOG_LEVEL'
+        required: false
+      REDIS_URL:
+        description: 'REDIS_URL'
+        required: false
+      ES_URL:
+        description: 'ES_URL'
+        required: false
+      AWS_REGION:
+        description: 'AWS_REGION'
+        required: false
+      DEBUG_MODE:
+        description: 'DEBUG_MODE'
+        required: false
+      ENVIRONMENT:
+        description: 'ENVIRONMENT'
+        required: false
+      AZURE_CONTAINER_NAME:
+        description: 'AZURE_CONTAINER_NAME'
+        required: false
+      AZURE_FORM_RECOGNIZER_ENDPOINT:
+        description: 'AZURE_FORM_RECOGNIZER_ENDPOINT'
+        required: false
+      LLAMA_API_KEY:
+        description: 'LLAMA_API_KEY'
+        required: false
+      LLAMA_ENDPOINT:
+        description: 'LLAMA_ENDPOINT'
+        required: false
+      LLAMA_MODEL:
+        description: 'LLAMA_MODEL'
+        required: false
+      STORAGE_ENVIRONMENT_PREFIX:
+        description: 'STORAGE_ENVIRONMENT_PREFIX (e.g., dev, stg, prd)'
+        required: false  
+      AI_CONTROLLER_BASE_URL:
+        description: 'AI_CONTROLLER_BASE_URL'
+        required: false
+      ELASTICSEARCH_HOSTS:
+        description: 'ELASTICSEARCH_HOSTS'
+        required: false
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS:
+        description: 'KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS'
+        required: false
+      NETWORK_NAME:
+        description: 'NETWORK_NAME'
+        required: false
+      PROCESSING_1001_BASE_URL:
+        description: 'PROCESSING_1001_BASE_URL'
         required: false
 
 jobs:
@@ -492,13 +576,28 @@ jobs:
               AZURE_STORAGE_SAS_TOKEN_STG "${{ secrets.AZURE_STORAGE_SAS_TOKEN_STG }}" \
               AZURE_STORAGE_ACCOUNT_NAME_PRD "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_PRD }}" \
               AZURE_STORAGE_SAS_TOKEN_PRD "${{ secrets.AZURE_STORAGE_SAS_TOKEN_PRD }}" \
-              AZURE_STORAGE_ACCOUNT_NAME_STG "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_STG }}" \
-              AZURE_STORAGE_SAS_TOKEN_STG "${{ secrets.AZURE_STORAGE_SAS_TOKEN_STG }}" \
-              AZURE_STORAGE_ACCOUNT_NAME_PRD "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_PRD }}" \
-              AZURE_STORAGE_SAS_TOKEN_PRD "${{ secrets.AZURE_STORAGE_SAS_TOKEN_PRD }}" \
               AZURE_FUNCTION_COMPRESSOR_KEY_DEV "${{ secrets.AZURE_FUNCTION_COMPRESSOR_KEY_DEV }}" \
               AZURE_FUNCTION_COMPRESSOR_KEY_STG "${{ secrets.AZURE_FUNCTION_COMPRESSOR_KEY_STG }}" \
               AZURE_FUNCTION_COMPRESSOR_KEY_PRD "${{ secrets.AZURE_FUNCTION_COMPRESSOR_KEY_PRD }}"
+              JWT_SECRET_KEY "${{ secrets.JWT_SECRET_KEY }}"
+              SECRET_KEY "${{ secrets.SECRET_KEY }}"
+              AZURE_FORM_RECOGNIZER_KEY "${{ secrets.AZURE_FORM_RECOGNIZER_KEY }}"
+              DB_NAME "${{ secrets.DB_NAME }}" \
+              AZURE_STORAGE_CONNECTION_STRING "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
+              AWS_REGION "${{ secrets.AWS_REGION }}" \
+              DEBUG_MODE "${{ secrets.DEBUG_MODE }}" \
+              ENVIRONMENT "${{ secrets.ENVIRONMENT }}" \
+              AZURE_CONTAINER_NAME "${{ secrets.AZURE_CONTAINER_NAME }}" \
+              AZURE_FORM_RECOGNIZER_ENDPOINT "${{ secrets.AZURE_FORM_RECOGNIZER_ENDPOINT }}" \
+              LLAMA_API_KEY "${{ secrets.LLAMA_API_KEY }}" \
+              LLAMA_ENDPOINT "${{ secrets.LLAMA_ENDPOINT }}" \
+              LLAMA_MODEL "${{ secrets.LLAMA_MODEL }}" \
+              STORAGE_ENVIRONMENT_PREFIX "${{ secrets.STORAGE_ENVIRONMENT_PREFIX }}" \
+              AI_CONTROLLER_BASE_URL "${{ secrets.AI_CONTROLLER_BASE_URL }}" \
+              ELASTICSEARCH_HOSTS "${{ secrets.ELASTICSEARCH_HOSTS }}" \
+              KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS "${{ secrets.KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS }}" \
+              NETWORK_NAME "${{ secrets.NETWORK_NAME }}" \
+              PROCESSING_1001_BASE_URL "${{ secrets.PROCESSING_1001_BASE_URL }}"
 
 
             set -a
