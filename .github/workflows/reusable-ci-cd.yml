@@ -132,6 +132,9 @@ on:
       DB_SCHEMA: 
         description: 'DB_SCHEMA'
         required: false
+      OCR_AZURE_ENDPOINT:
+        description: 'OCR_AZURE_ENDPOINT' 
+        required: false
       DB_NAME: 
         description: 'DB_NAME'
         required: false
@@ -558,6 +561,7 @@ jobs:
               DB_USER "${{ secrets.DB_USER }}" \
               DB_PASSWORD "${{ secrets.DB_PASSWORD }}" \
               DB_SCHEMA "${{ secrets.DB_SCHEMA }}" \
+              OCR_AZURE_ENDPOINT "${{ secrets.OCR_AZURE_ENDPOINT }}" \
               OCR_AZURE_KEY "${{ secrets.OCR_AZURE_KEY }}" \
               GCP_KEY_BASE64 "${{ secrets.GCP_KEY_BASE64 }}" \
               FALLBACK_GCP_KEY_BASE64 "${{ secrets.FALLBACK_GCP_KEY_BASE64 }}" \
